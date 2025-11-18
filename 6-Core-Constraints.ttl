@@ -1,0 +1,111 @@
+@prefix rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#> .
+@prefix rdfs: <http://www.w3.org/2000/01/rdf-schema#> .
+@prefix owl: <http://www.w3.org/2002/07/owl#> .
+@prefix sh: <http://www.w3.org/ns/shacl#> .
+@prefix xsd: <http://www.w3.org/2001/XMLSchema#> .
+@prefix skos: <http://www.w3.org/2004/02/skos/core#> .
+@prefix foaf: <http://xmlns.com/foaf/0.1/> . 
+
+@prefix data: <http://data.veronahe.no/> .
+@prefix ont: <http://ontology.veronahe.no/> .
+@prefix rules: <http://shapes.veronahe.no/> .
+
+# Shapes as described from Ch. 6 Core Constraint Components
+
+rule:Book 
+    a sh:NodeShape ;
+    sh:targetClass ont:Book .
+
+rule:Book sh:property rule:Book-title .
+rule:Book-title
+    a sh:PropertyShape ;
+    sh:path ont:title ;
+    sh:equals ont:mainTitle .
+
+rule:Book sh:property rule:Book-author .
+rule:Book-auhtor 
+    a sh:PropertyShape ;
+    sh:path ont:author ;
+    sh:disjoint ont:editor ;
+    sh:minCount 1 ;
+    sh:or (
+        [ sh:class foaf:Person ]
+        [ sh:class ont:Person ] 
+    ) .
+
+rule:Book sh:property rule:Book-pages .
+rule:Book-pages 
+    a sh:PropertyShape ;
+    sh:path ont:pages ;
+    sh:datatype xsd:integer ;
+    sh:maxExclusive 10000 .
+
+rule:Book sh:property rule:Book-publisher .
+rule:Book-publisher
+    a sh:PropertyShape ;
+    sh:path ont:publisher ;
+    sh:nodeKind sh:IRI .
+
+rule:Book sh:property rule:Book-mainTitle .
+rule:Book-mainTitle
+    a sh:PropertyShape ;
+    sh:path ont:mainTitle ;
+    sh:datatype xsd:string ;
+    sh:minCount 1 ;
+    sh:maxCount 1 ;
+    sh:minLength 2 .
+
+rule:Book sh:property rule:Book-publishedDate .
+rule:Book-publishedDate
+    a sh:PropertyShape ;
+    sh:path ont:publishedDate ;
+    sh:datatype xsd:date .
+
+rule:Book sh:property rule:Book-isbn .
+rule:Book-isbn 
+    a sh:PropertyShape ;
+    sh:path ont:isbn ;
+    sh:pattern "^(?:\d{9}[\dX]|\d{13})$" .
+
+rule:Book sh:property rule:Book-firstEdition .
+rule:Book-firstEdition 
+    a sh:PropertyShape ;
+    sh:path ont:firstEdition ;
+    sh:datatype xsd:date ;
+    sh:lessThan ont:secondEdition .
+
+rule:Person a sh:NodeShape ;
+    sh:targetClass ont:Person ;
+    sh:not rule:Agent-status ;
+    sh:and ( rule:Person-firstName rule:Person-surname ) ;
+#   sh:xone ( rule:Person-birthDate rule:Person-birthYear ) ;
+    sh:or ( rule:Person-birthDate rule:Person-birthYear ) .
+
+rule:Agent-status a sh:PropertyShape ;
+    sh:path foaf:status ;
+    sh:minCount 1 .
+
+rule:Person-firstName a sh:PropertyShape ;
+    sh:path ont:firstname ;
+    sh:minCount 1 .
+
+rule:Person-surname a sh:PropertyShape ;
+    sh:paht ont:surname ;
+    sh:minCount 1 .
+
+rule:Person-birthDate a sh:PropertyShape ;
+    sh:path ont:birthDate ;
+    sh:datatype xsd:date ;
+    sh:minCount 1 .
+
+rule:Person-birthYear a sh:PropertyShape ;
+    sh:path ont:birthYear ;
+    sh:datatype xsd:gYear ;
+    sh:minCount 1 .
+
+rule:TheHobbit a sh:NodeShape ;
+    sh:targetNode data:TheHobbit ;
+    sh:property [
+        sh:path ont:genre ;
+        sh:hasValue ont:Fantasy ;
+    ] .
