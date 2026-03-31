@@ -1,0 +1,682 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>SHACL for the Practitioner — by Veronika Heimsbakk</title>
+  <meta name="description" content="Exploring knowledge graphs through the Shapes Constraint Language. A hands-on guide written and illustrated by Veronika Heimsbakk." />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Source+Serif+4:ital,wght@0,400;0,600;1,400&display=swap" rel="stylesheet" />
+  <style>
+    /* ── Reset & Base ──────────────────────────── */
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    html { scroll-behavior: smooth; font-size: 16px; }
+    body {
+      font-family: 'Inter', system-ui, -apple-system, sans-serif;
+      color: #1a1a1a;
+      background: #fafafa;
+      line-height: 1.7;
+      -webkit-font-smoothing: antialiased;
+    }
+
+    /* ── Utility ───────────────────────────────── */
+    .container { max-width: 1100px; margin: 0 auto; padding: 0 2rem; }
+    .serif { font-family: 'Source Serif 4', Georgia, serif; }
+    .accent { color: #c8a000; }
+    .sr-only { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0,0,0,0); }
+
+    /* ── Navigation ────────────────────────────── */
+    nav {
+      position: fixed; top: 0; left: 0; right: 0; z-index: 100;
+      background: rgba(250,250,250,0.92);
+      backdrop-filter: blur(12px);
+      -webkit-backdrop-filter: blur(12px);
+      border-bottom: 1px solid rgba(0,0,0,0.06);
+      transition: box-shadow 0.3s;
+    }
+    nav.scrolled { box-shadow: 0 1px 12px rgba(0,0,0,0.06); }
+    nav .container {
+      display: flex; align-items: center; justify-content: space-between;
+      height: 64px;
+    }
+    nav .logo {
+      font-weight: 700; font-size: 1.05rem; letter-spacing: -0.02em;
+      color: #1a1a1a; text-decoration: none;
+    }
+    nav .logo span { color: #c8a000; }
+    nav ul { list-style: none; display: flex; gap: 2rem; }
+    nav a {
+      text-decoration: none; color: #555; font-size: 0.9rem; font-weight: 500;
+      transition: color 0.2s;
+    }
+    nav a:hover { color: #1a1a1a; }
+
+    /* ── Hero ──────────────────────────────────── */
+    .hero {
+      min-height: 100vh;
+      display: flex; align-items: center;
+      padding-top: 64px;
+      background:
+        radial-gradient(ellipse 80% 60% at 70% 40%, rgba(255,215,0,0.08) 0%, transparent 70%),
+        #fafafa;
+    }
+    .hero .container {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 4rem;
+      align-items: center;
+    }
+    .hero-text { max-width: 520px; }
+    .hero-tag {
+      display: inline-block;
+      font-size: 0.75rem; font-weight: 600; letter-spacing: 0.1em; text-transform: uppercase;
+      color: #c8a000;
+      background: rgba(200,160,0,0.1);
+      padding: 0.35rem 0.85rem;
+      border-radius: 100px;
+      margin-bottom: 1.5rem;
+    }
+    .hero-text h1 {
+      font-size: clamp(2.4rem, 4.5vw, 3.6rem);
+      font-weight: 700;
+      line-height: 1.1;
+      letter-spacing: -0.03em;
+      margin-bottom: 1.5rem;
+    }
+    .hero-text p {
+      font-size: 1.15rem;
+      color: #555;
+      margin-bottom: 2rem;
+      max-width: 440px;
+    }
+    .hero-meta {
+      display: flex; flex-wrap: wrap; gap: 1.5rem;
+      font-size: 0.85rem; color: #888;
+      margin-bottom: 2.5rem;
+    }
+    .hero-meta span { display: flex; align-items: center; gap: 0.4rem; }
+    .hero-meta svg { width: 16px; height: 16px; stroke: #c8a000; fill: none; stroke-width: 2; }
+
+    .hero-cta {
+      display: inline-flex; align-items: center; gap: 0.6rem;
+      background: #1a1a1a; color: #fff;
+      padding: 0.9rem 2rem; border-radius: 100px;
+      font-size: 0.95rem; font-weight: 600;
+      text-decoration: none;
+      transition: all 0.25s;
+      border: 2px solid #1a1a1a;
+    }
+    .hero-cta:hover { background: #c8a000; border-color: #c8a000; color: #1a1a1a; }
+    .hero-cta svg { width: 18px; height: 18px; fill: none; stroke: currentColor; stroke-width: 2; }
+
+    .hero-cover {
+      display: flex; justify-content: center; align-items: center;
+      position: relative;
+    }
+    .hero-cover img {
+      width: 340px;
+      border-radius: 8px;
+      box-shadow:
+        0 25px 60px rgba(0,0,0,0.12),
+        0 8px 20px rgba(0,0,0,0.08);
+      transition: transform 0.4s;
+    }
+    .hero-cover img:hover { transform: translateY(-6px) rotate(-1deg); }
+    .hero-cover::before {
+      content: '';
+      position: absolute;
+      width: 300px; height: 300px;
+      background: radial-gradient(circle, rgba(255,215,0,0.15) 0%, transparent 70%);
+      top: 50%; left: 50%;
+      transform: translate(-50%, -50%);
+      z-index: -1;
+    }
+
+    /* ── Section shared ────────────────────────── */
+    section { padding: 7rem 0; }
+    .section-label {
+      font-size: 0.75rem; font-weight: 600; letter-spacing: 0.1em; text-transform: uppercase;
+      color: #c8a000; margin-bottom: 0.75rem;
+    }
+    .section-title {
+      font-size: clamp(1.8rem, 3vw, 2.4rem);
+      font-weight: 700; letter-spacing: -0.02em;
+      margin-bottom: 1rem; line-height: 1.2;
+    }
+    .section-subtitle {
+      font-size: 1.1rem; color: #666; max-width: 560px; margin-bottom: 3rem;
+    }
+
+    /* ── About ─────────────────────────────────── */
+    .about { background: #fff; }
+    .about .grid {
+      display: grid; grid-template-columns: 1fr 1fr; gap: 4rem; align-items: start;
+    }
+    .about-features {
+      display: grid; grid-template-columns: 1fr 1fr; gap: 1.5rem;
+      margin-top: 2rem;
+    }
+    .feature-card {
+      padding: 1.5rem;
+      background: #fafafa;
+      border-radius: 12px;
+      border: 1px solid rgba(0,0,0,0.05);
+      transition: border-color 0.25s;
+    }
+    .feature-card:hover { border-color: rgba(200,160,0,0.3); }
+    .feature-icon {
+      width: 40px; height: 40px;
+      background: rgba(200,160,0,0.1);
+      border-radius: 10px;
+      display: flex; align-items: center; justify-content: center;
+      margin-bottom: 0.75rem;
+    }
+    .feature-icon svg { width: 20px; height: 20px; stroke: #c8a000; fill: none; stroke-width: 2; }
+    .feature-card h3 { font-size: 0.95rem; font-weight: 600; margin-bottom: 0.35rem; }
+    .feature-card p { font-size: 0.85rem; color: #777; line-height: 1.5; }
+
+    /* ── Table of Contents ─────────────────────── */
+    .toc-section { background: #fafafa; }
+    .toc-grid {
+      display: grid; grid-template-columns: repeat(3, 1fr); gap: 2rem;
+    }
+    .toc-part {
+      background: #fff;
+      border-radius: 12px;
+      padding: 2rem;
+      border: 1px solid rgba(0,0,0,0.05);
+      transition: box-shadow 0.25s, border-color 0.25s;
+    }
+    .toc-part:hover { box-shadow: 0 8px 30px rgba(0,0,0,0.05); border-color: rgba(200,160,0,0.3); }
+    .toc-part-num {
+      font-size: 0.7rem; font-weight: 700; letter-spacing: 0.08em; text-transform: uppercase;
+      color: #c8a000; margin-bottom: 0.5rem;
+    }
+    .toc-part h3 { font-size: 1.15rem; font-weight: 700; margin-bottom: 1rem; }
+    .toc-part ul { list-style: none; }
+    .toc-part li {
+      font-size: 0.88rem; color: #555; padding: 0.4rem 0;
+      border-bottom: 1px solid rgba(0,0,0,0.04);
+    }
+    .toc-part li:last-child { border-bottom: none; }
+    .toc-part li .ch-num { color: #bbb; font-size: 0.8rem; margin-right: 0.35rem; font-weight: 500; }
+
+    /* ── Stories / Contributors ─────────────────── */
+    .stories { background: #fff; }
+    .stories-grid {
+      display: grid; grid-template-columns: repeat(3, 1fr); gap: 1.5rem;
+    }
+    .story-card {
+      padding: 1.75rem;
+      border-radius: 12px;
+      border: 1px solid rgba(0,0,0,0.06);
+      background: #fafafa;
+      transition: border-color 0.25s, transform 0.25s;
+    }
+    .story-card:hover { border-color: rgba(200,160,0,0.35); transform: translateY(-2px); }
+    .story-card h4 { font-size: 0.95rem; font-weight: 600; margin-bottom: 0.5rem; line-height: 1.35; }
+    .story-card .story-author { font-size: 0.82rem; color: #999; }
+    .story-card .story-org { font-size: 0.78rem; color: #c8a000; margin-top: 0.25rem; }
+
+    /* ── Praise ─────────────────────────────────── */
+    .praise { background: #fafafa; }
+    .praise-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 2rem; }
+    .praise-card {
+      background: #fff;
+      padding: 2rem;
+      border-radius: 12px;
+      border: 1px solid rgba(0,0,0,0.05);
+    }
+    .praise-card blockquote {
+      font-family: 'Source Serif 4', Georgia, serif;
+      font-size: 1.05rem;
+      font-style: italic;
+      color: #444;
+      line-height: 1.65;
+      margin-bottom: 1rem;
+    }
+    .praise-card .praise-author { font-size: 0.85rem; font-weight: 600; }
+    .praise-card .praise-role { font-size: 0.8rem; color: #999; }
+
+    /* ── Details / Specs ───────────────────────── */
+    .details { background: #1a1a1a; color: #fff; }
+    .details .section-label { color: #ffd700; }
+    .details .section-title { color: #fff; }
+    .details .section-subtitle { color: #999; }
+    .details-grid {
+      display: grid; grid-template-columns: repeat(4, 1fr); gap: 2rem;
+    }
+    .detail-item {
+      padding: 1.5rem;
+      background: rgba(255,255,255,0.04);
+      border-radius: 12px;
+      border: 1px solid rgba(255,255,255,0.06);
+    }
+    .detail-item .detail-label {
+      font-size: 0.72rem; font-weight: 600; letter-spacing: 0.08em; text-transform: uppercase;
+      color: #ffd700; margin-bottom: 0.5rem;
+    }
+    .detail-item .detail-value { font-size: 1rem; color: #ddd; }
+
+    /* ── FAQ ────────────────────────────────────── */
+    .faq { background: #fff; }
+    .faq-list { max-width: 700px; }
+    details {
+      border-bottom: 1px solid rgba(0,0,0,0.06);
+      padding: 1.25rem 0;
+    }
+    summary {
+      font-weight: 600; font-size: 0.95rem;
+      cursor: pointer; list-style: none;
+      display: flex; justify-content: space-between; align-items: center;
+    }
+    summary::-webkit-details-marker { display: none; }
+    summary::after {
+      content: '+'; font-size: 1.2rem; color: #c8a000; font-weight: 300;
+      transition: transform 0.2s;
+    }
+    details[open] summary::after { content: '−'; }
+    details p {
+      margin-top: 0.75rem; font-size: 0.9rem; color: #666; max-width: 600px;
+    }
+
+    /* ── CTA ────────────────────────────────────── */
+    .cta-section {
+      padding: 6rem 0;
+      background:
+        linear-gradient(135deg, rgba(255,215,0,0.06) 0%, transparent 50%),
+        #fafafa;
+      text-align: center;
+    }
+    .cta-section h2 {
+      font-size: clamp(1.8rem, 3vw, 2.4rem);
+      font-weight: 700; letter-spacing: -0.02em;
+      margin-bottom: 1rem;
+    }
+    .cta-section p { color: #666; font-size: 1.05rem; margin-bottom: 2rem; }
+    .cta-buttons { display: flex; gap: 1rem; justify-content: center; flex-wrap: wrap; }
+    .btn-primary {
+      background: #1a1a1a; color: #fff;
+      padding: 0.9rem 2.2rem; border-radius: 100px;
+      font-size: 0.95rem; font-weight: 600;
+      text-decoration: none; border: 2px solid #1a1a1a;
+      transition: all 0.25s;
+    }
+    .btn-primary:hover { background: #c8a000; border-color: #c8a000; color: #1a1a1a; }
+    .btn-secondary {
+      background: transparent; color: #1a1a1a;
+      padding: 0.9rem 2.2rem; border-radius: 100px;
+      font-size: 0.95rem; font-weight: 600;
+      text-decoration: none; border: 2px solid rgba(0,0,0,0.12);
+      transition: all 0.25s;
+    }
+    .btn-secondary:hover { border-color: #c8a000; color: #c8a000; }
+
+    .buy-box {
+      max-width: 400px;
+      margin: 0 auto;
+      padding: 2rem;
+      background: #fff;
+      border-radius: 16px;
+      border: 1px solid rgba(0,0,0,0.06);
+      box-shadow: 0 4px 24px rgba(0,0,0,0.05);
+    }
+
+    /* ── Footer ─────────────────────────────────── */
+    footer {
+      padding: 3rem 0;
+      background: #1a1a1a; color: #777;
+      font-size: 0.82rem;
+    }
+    footer .container {
+      display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 1rem;
+    }
+    footer a { color: #c8a000; text-decoration: none; }
+    footer a:hover { text-decoration: underline; }
+
+    /* ── Responsive ─────────────────────────────── */
+    @media (max-width: 900px) {
+      .hero .container { grid-template-columns: 1fr; text-align: center; gap: 3rem; }
+      .hero-text { max-width: 100%; margin: 0 auto; }
+      .hero-text p { margin: 0 auto 2rem; }
+      .hero-meta { justify-content: center; }
+      .hero-cover img { width: 260px; }
+      .about .grid { grid-template-columns: 1fr; }
+      .toc-grid { grid-template-columns: 1fr; }
+      .stories-grid { grid-template-columns: 1fr; }
+      .praise-grid { grid-template-columns: 1fr; }
+      .details-grid { grid-template-columns: 1fr 1fr; }
+    }
+    @media (max-width: 600px) {
+      .about-features { grid-template-columns: 1fr; }
+      .details-grid { grid-template-columns: 1fr; }
+      nav ul { gap: 1rem; }
+      nav a { font-size: 0.8rem; }
+    }
+  </style>
+</head>
+<body>
+
+<!-- ─── Navigation ─────────────────────────────── -->
+<nav id="nav">
+  <div class="container">
+    <a href="#" class="logo">SHACL <span>for the Practitioner</span></a>
+    <ul>
+      <li><a href="#about">About</a></li>
+      <li><a href="#contents">Contents</a></li>
+      <li><a href="#stories">Stories</a></li>
+      <li><a href="#details">Details</a></li>
+      <li><a href="#faq">FAQ</a></li>
+      <li><a href="#buy" style="color:#c8a000;">Buy</a></li>
+    </ul>
+  </div>
+</nav>
+
+<!-- ─── Hero ───────────────────────────────────── -->
+<section class="hero" id="hero">
+  <div class="container">
+    <div class="hero-text">
+      <div class="hero-tag">First Edition</div>
+      <h1>SHACL for the Practitioner</h1>
+      <p>Exploring knowledge graphs through the Shapes Constraint Language. A hands-on guide, written and illustrated by hand.</p>
+      <div class="hero-meta">
+        <span>
+          <svg viewBox="0 0 24 24"><path d="M20 21V5a2 2 0 0 0-2-2H6a2 2 0 0 0-2 2v16l4-3 4 3 4-3 4 3z"/></svg>
+          17 Chapters
+        </span>
+        <span>
+          <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><path d="M12 6v6l4 2"/></svg>
+          9 Real-World Stories
+        </span>
+        <span>
+          <svg viewBox="0 0 24 24"><path d="M12 2L2 7l10 5 10-5-10-5z"/><path d="M2 17l10 5 10-5"/><path d="M2 12l10 5 10-5"/></svg>
+          Exercises Included
+        </span>
+      </div>
+      <a href="#buy" class="hero-cta">
+        Get Your Copy
+        <svg viewBox="0 0 24 24"><path d="M5 12h14M12 5l7 7-7 7"/></svg>
+      </a>
+    </div>
+    <div class="hero-cover">
+      <img src="img/cover.png" alt="SHACL for the Practitioner — book cover" />
+    </div>
+  </div>
+</section>
+
+<!-- ─── About ──────────────────────────────────── -->
+<section class="about" id="about">
+  <div class="container">
+    <div class="grid">
+      <div>
+        <div class="section-label">About the Book</div>
+        <h2 class="section-title">From the Semantic Web to your codebase</h2>
+        <p class="section-subtitle">SHACL for the Practitioner guides you from the fundamentals of RDF, semantic technologies and knowledge graphs through the full depth of the Shapes Constraint Language, with hand-drawn illustrations, real code, and stories from production.</p>
+        <p style="color:#666; font-size:0.95rem; line-height:1.7;">Written and illustrated by <strong>Veronika Heimsbakk</strong>, edited by <strong>Larry Swanson</strong>, with a foreword by <strong>Holger Knublauch</strong>, one of the original authors of the SHACL specification. The book is typeset in LaTeX with hand-drawn chapter illustrations traced to vector in Inkscape. Every diagram, every unicorn, every page: crafted with care.</p>
+      </div>
+      <div class="about-features">
+        <div class="feature-card">
+          <div class="feature-icon">
+            <svg viewBox="0 0 24 24"><path d="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z"/><path d="M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z"/></svg>
+          </div>
+          <h3>Back to Basics</h3>
+          <p>RDF, the Semantic Web, logic and the Resource Description Framework, from scratch.</p>
+        </div>
+        <div class="feature-card">
+          <div class="feature-icon">
+            <svg viewBox="0 0 24 24"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>
+          </div>
+          <h3>The Core of SHACL</h3>
+          <p>Shapes, constraint components, SHACL-SPARQL and the SHACL engine explained.</p>
+        </div>
+        <div class="feature-card">
+          <div class="feature-icon">
+            <svg viewBox="0 0 24 24"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
+          </div>
+          <h3>SHACL Stories</h3>
+          <p>Nine real-world case studies from maritime authorities to railway law.</p>
+        </div>
+        <div class="feature-card">
+          <div class="feature-icon">
+            <svg viewBox="0 0 24 24"><polyline points="16 18 22 12 16 6"/><polyline points="8 6 2 12 8 18"/></svg>
+          </div>
+          <h3>Hands-On</h3>
+          <p>Exercises, logical puzzles, and <a href="https://github.com/veleda/shacl-for-the-practitioner" target="_blank" style="color:#c8a000; text-decoration:underline;">companion code on GitHub</a> to put theory into practice.</p>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ─── Table of Contents ──────────────────────── -->
+<section class="toc-section" id="contents">
+  <div class="container">
+    <div class="section-label">What's Inside</div>
+    <h2 class="section-title">Table of Contents</h2>
+    <p class="section-subtitle">Three parts, seventeen chapters, plus appendices. From first principles to production-grade stories.</p>
+    <div class="toc-grid">
+      <div class="toc-part">
+        <div class="toc-part-num">Part I</div>
+        <h3>Back to Basics</h3>
+        <ul>
+          <li><span class="ch-num">1</span> The Semantic Web</li>
+          <li><span class="ch-num">2</span> The Wonder of Logic</li>
+          <li><span class="ch-num">3</span> Resource Description Framework</li>
+        </ul>
+      </div>
+      <div class="toc-part">
+        <div class="toc-part-num">Part II</div>
+        <h3>The Core of SHACL</h3>
+        <ul>
+          <li><span class="ch-num">4</span> A Closed World of Shapes</li>
+          <li><span class="ch-num">5</span> Shapes of SHACL</li>
+          <li><span class="ch-num">6</span> Core Constraint Components</li>
+          <li><span class="ch-num">7</span> SHACL-SPARQL</li>
+          <li><span class="ch-num">8</span> The SHACL Engine</li>
+        </ul>
+      </div>
+      <div class="toc-part">
+        <div class="toc-part-num">Part III</div>
+        <h3>SHACL Stories</h3>
+        <ul>
+          <li><span class="ch-num">9</span> Norwegian Maritime Authority</li>
+          <li><span class="ch-num">10</span> European Parliament Open Data</li>
+          <li><span class="ch-num">11</span> European Railway Law in SHACL</li>
+          <li><span class="ch-num">12</span> An Actor in the Automotive Industry</li>
+          <li><span class="ch-num">13</span> FörderFunke</li>
+          <li><span class="ch-num">14</span> Nakala: RDF to Query UI</li>
+          <li><span class="ch-num">15</span> Urban Data Quality & Compliance</li>
+          <li><span class="ch-num">16</span> eInnsyn</li>
+          <li><span class="ch-num">17</span> Enterprise Tooling for SHACL</li>
+        </ul>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ─── SHACL Stories ──────────────────────────── -->
+<section class="stories" id="stories">
+  <div class="container">
+    <div class="section-label">Real-World Impact</div>
+    <h2 class="section-title">SHACL in Production</h2>
+    <p class="section-subtitle">Guest authors share how SHACL drives data-driven value across industries and organizations worldwide.</p>
+    <div class="stories-grid">
+      <div class="story-card">
+        <h4>Machine-Readable Maritime Regulations</h4>
+        <div class="story-author">Veronika Heimsbakk</div>
+        <div class="story-org">Norwegian Maritime Authority</div>
+      </div>
+      <div class="story-card">
+        <h4>A SHACL-Powered Knowledge Graph for Open Data</h4>
+        <div class="story-author">Thomas Francart</div>
+        <div class="story-org">European Parliament</div>
+      </div>
+      <div class="story-card">
+        <h4>Coding Railway Law in SHACL</h4>
+        <div class="story-author">Aguado, Atemezing, Duhoux, Patru &amp; Vasilopoulou</div>
+        <div class="story-org">European Union Agency for Railways</div>
+      </div>
+      <div class="story-card">
+        <h4>RDF Dataset to a Query UI in Minutes</h4>
+        <div class="story-author">Thomas Francart</div>
+        <div class="story-org">Nakala / Huma-Num</div>
+      </div>
+      <div class="story-card">
+        <h4>Urban Data Quality &amp; Regulatory Compliance</h4>
+        <div class="story-author">Ashley Caselli</div>
+        <div class="story-org">Smart Cities</div>
+      </div>
+      <div class="story-card">
+        <h4>Enterprise Tooling for SHACL</h4>
+        <div class="story-author">Holger Knublauch</div>
+        <div class="story-org">TopQuadrant</div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ─── Praise ──────────────────────────────────── -->
+<section class="praise" id="praise">
+  <div class="container">
+    <div class="section-label">What Readers Say</div>
+    <h2 class="section-title">From the community</h2>
+    <p class="section-subtitle" style="margin-bottom:2.5rem;">Reviewed and proofread by leading SHACL experts.</p>
+    <div class="praise-grid">
+      <div class="praise-card">
+        <blockquote>"The material is super useful for anyone working with graph technologies."</blockquote>
+        <div class="praise-author"><a href="https://www.goodreads.com/book/show/245855210-shacl-for-the-practitioner" target="_blank" style="color:inherit; text-decoration:underline; text-decoration-color:#c8a000;">Paco Nathan</a></div>
+        <div class="praise-role">Author · 5-star review on Goodreads</div>
+      </div>
+      <div class="praise-card">
+        <blockquote>"I couldn't ask for a better introduction to this space."</blockquote>
+        <div class="praise-author"><a href="https://www.linkedin.com/posts/andyfitzgerald_over-the-weekend-i-finished-veronika-heimsbakks-activity-7396561074608726017-fGD-" target="_blank" style="color:inherit; text-decoration:underline; text-decoration-color:#c8a000;">Andy Fitzgerald, PhD</a></div>
+        <div class="praise-role">Content Operations Strategy &amp; Design</div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ─── Details ─────────────────────────────────── -->
+<section class="details" id="details">
+  <div class="container">
+    <div class="section-label">Book Details</div>
+    <h2 class="section-title">The Specifications</h2>
+    <p class="section-subtitle">Everything you need to know before ordering.</p>
+    <div class="details-grid">
+      <div class="detail-item">
+        <div class="detail-label">Author</div>
+        <div class="detail-value">Veronika Heimsbakk</div>
+      </div>
+      <div class="detail-item">
+        <div class="detail-label">Editor</div>
+        <div class="detail-value">Larry Swanson</div>
+      </div>
+      <div class="detail-item">
+        <div class="detail-label">Published</div>
+        <div class="detail-value">November 2025, Oslo</div>
+      </div>
+      <div class="detail-item">
+        <div class="detail-label">Publisher</div>
+        <div class="detail-value">Author self-publish</div>
+      </div>
+      <div class="detail-item">
+        <div class="detail-label">ISBN (Paperback)</div>
+        <div class="detail-value">978-82-694212-0-0</div>
+      </div>
+      <div class="detail-item">
+        <div class="detail-label">ISBN (Digital)</div>
+        <div class="detail-value">978-82-694212-1-7</div>
+      </div>
+      <div class="detail-item">
+        <div class="detail-label">Editions</div>
+        <div class="detail-value">Paperback &amp; PDF</div>
+      </div>
+      <div class="detail-item">
+        <div class="detail-label">Price</div>
+        <div class="detail-value">kr 399.00 NOK</div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ─── FAQ ─────────────────────────────────────── -->
+<section class="faq" id="faq">
+  <div class="container">
+    <div class="section-label">Questions</div>
+    <h2 class="section-title">Frequently Asked</h2>
+    <p class="section-subtitle" style="margin-bottom:2rem;">Common questions about ordering, shipping and the e-book.</p>
+    <div class="faq-list">
+      <details>
+        <summary>I didn't receive my e-book instantly. What's up?</summary>
+        <p>Each PDF copy is personally generated with your name watermarked on the file. Due to this manual process, the e-book will not be delivered instantly. Please make sure your e-mail address is correct at checkout.</p>
+      </details>
+      <details>
+        <summary>I ordered the paperback ages ago. Where is it?</summary>
+        <p>Paperback copies are shipped from Norway. Due to the costs of distribution as a private person, there is only simplified tracking. The book should be sent 1-3 days after purchase domestically, but international shipments vary depending on customs and location.</p>
+      </details>
+      <details>
+        <summary>Shipments to the U.S.: anything I should know?</summary>
+        <p>Due to customs regulations from the U.S. to Norway, there have been experiences of empty envelopes arriving or shipments lost. Please let the author know if this happens to you.</p>
+      </details>
+      <details>
+        <summary>Do I have to pay customs and VAT?</summary>
+        <p>The author handles distribution personally. There are no straight-out-of-the-box solutions for paying VAT to the buyer's local country. This is highlighted during the purchase process.</p>
+      </details>
+      <details>
+        <summary>Do you accept PayPal?</summary>
+        <p>Yes! The checkout accepts card and PayPal accounts. If you are not comfortable using PayPal, you can use Vipps (Norway/Sweden) or bank transfer. Reach out directly for details.</p>
+      </details>
+    </div>
+  </div>
+</section>
+
+<!-- ─── CTA / Buy ──────────────────────────────── -->
+<section class="cta-section" id="buy">
+  <div class="container">
+    <div class="section-label">Get Your Copy</div>
+    <h2>Ready to master SHACL?</h2>
+    <p>Available as paperback and personalised PDF, shipped from Oslo, Norway.<br><strong>kr 399.00 NOK</strong> &middot; Prices include postage and shipping, not local VAT.</p>
+
+    <div class="buy-box">
+      <div id="paypal-container-NCTVPEQVZRB76"></div>
+    </div>
+
+    <p style="margin-top:1.5rem; font-size:0.85rem; color:#999;">
+      Prefer another method? <a href="mailto:veronika.heim@gmail.com" style="color:#c8a000;">Get in touch</a> for Vipps or bank transfer.
+    </p>
+  </div>
+</section>
+
+<!-- ─── Footer ──────────────────────────────────── -->
+<footer>
+  <div class="container">
+    <span>&copy; 2025 Veronika Heimsbakk. All rights reserved.</span>
+    <span>
+      <a href="https://github.com/vheimsb" target="_blank">GitHub</a> &middot;
+      <a href="https://linkedin.com/in/veronikaheimsb" target="_blank">LinkedIn</a> &middot;
+      <a href="https://bsky.app" target="_blank">Bluesky</a> &middot;
+      <a href="https://veronahe.substack.com" target="_blank">Substack</a>
+    </span>
+  </div>
+</footer>
+
+<!-- ─── PayPal SDK ──────────────────────────────── -->
+<script src="https://www.paypal.com/sdk/js?client-id=BAAx58KxK5hPuDbE5_NRzwFxBimcrhxUzcGYtT8PZq5okQl8FfJG-3YRuiPali4iF2QOFj0rqdp4BiIFKw&components=hosted-buttons&disable-funding=venmo&currency=NOK" data-namespace="paypal_payment_buttons"></script>
+
+<!-- ─── Scroll behaviour ───────────────────────── -->
+<script>
+  const nav = document.getElementById('nav');
+  window.addEventListener('scroll', () => {
+    nav.classList.toggle('scrolled', window.scrollY > 20);
+  });
+</script>
+
+<!-- ─── PayPal Hosted Button ───────────────────── -->
+<script>
+  (window.paypal_payment_buttons || window.paypal).HostedButtons({
+    hostedButtonId: "NCTVPEQVZRB76",
+  }).render("#paypal-container-NCTVPEQVZRB76");
+</script>
+</body>
+</html>
