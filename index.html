@@ -323,6 +323,97 @@
       box-shadow: 0 4px 24px rgba(0,0,0,0.05);
     }
 
+    /* ── Campaign Banner ───────────────────────── */
+    .campaign {
+      background: #1a1a1a;
+      color: #fff;
+      padding: 5rem 0;
+      position: relative;
+      overflow: hidden;
+    }
+    .campaign::before {
+      content: '';
+      position: absolute;
+      width: 400px; height: 400px;
+      background: radial-gradient(circle, rgba(255,215,0,0.1) 0%, transparent 70%);
+      top: -100px; right: -100px;
+    }
+    .campaign .container {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 3rem;
+      align-items: center;
+    }
+    .campaign-badge {
+      display: inline-block;
+      font-size: 0.7rem; font-weight: 700; letter-spacing: 0.1em; text-transform: uppercase;
+      color: #1a1a1a;
+      background: #ffd700;
+      padding: 0.4rem 1rem;
+      border-radius: 100px;
+      margin-bottom: 1.5rem;
+    }
+    .campaign h2 {
+      font-size: clamp(1.6rem, 3vw, 2.2rem);
+      font-weight: 700; letter-spacing: -0.02em;
+      line-height: 1.2;
+      margin-bottom: 1rem;
+    }
+    .campaign h2 span { color: #ffd700; }
+    .campaign > .container > div > p { color: #aaa; font-size: 1rem; margin-bottom: 2rem; line-height: 1.6; }
+    .campaign-perks {
+      display: grid; grid-template-columns: repeat(3, 1fr); gap: 1rem;
+      margin-bottom: 2rem;
+    }
+    .campaign-perk {
+      background: rgba(255,255,255,0.05);
+      border: 1px solid rgba(255,255,255,0.08);
+      border-radius: 12px;
+      padding: 1.25rem;
+      text-align: center;
+    }
+    .campaign-perk svg {
+      width: 28px; height: 28px; stroke: #ffd700; fill: none; stroke-width: 1.5;
+      margin-bottom: 0.5rem;
+    }
+    .campaign-perk h4 { font-size: 0.82rem; font-weight: 600; margin-bottom: 0.25rem; }
+    .campaign-perk p { font-size: 0.75rem; color: #888; line-height: 1.4; }
+    .campaign-dates {
+      font-size: 0.85rem; color: #999;
+      margin-bottom: 2rem;
+    }
+    .campaign-dates strong { color: #ffd700; }
+    .campaign-checkout {
+      max-width: 320px;
+      background: rgba(255,255,255,0.06);
+      border: 1px solid rgba(255,255,255,0.1);
+      border-radius: 16px;
+      padding: 2.5rem;
+      text-align: center;
+      margin: 0 auto;
+    }
+    .campaign-checkout .discount-badge {
+      display: inline-block;
+      font-size: 1.8rem; font-weight: 700;
+      color: #1a1a1a;
+      background: #ffd700;
+      width: 80px; height: 80px;
+      border-radius: 50%;
+      line-height: 80px;
+      margin-bottom: 1.5rem;
+    }
+    .campaign-checkout h3 {
+      font-size: 1.1rem; font-weight: 600; margin-bottom: 0.5rem;
+    }
+    .campaign-checkout .checkout-sub {
+      font-size: 0.85rem; color: #999; margin-bottom: 1.5rem;
+    }
+    @media (max-width: 900px) {
+      .campaign .container { grid-template-columns: 1fr; text-align: center; }
+      .campaign-perks { grid-template-columns: 1fr; max-width: 280px; margin: 0 auto 2rem; }
+      .campaign-dates { text-align: center; }
+    }
+
     /* ── Footer ─────────────────────────────────── */
     footer {
       padding: 3rem 0;
@@ -362,6 +453,7 @@
 <nav id="nav">
   <div class="container">
     <ul>
+      <li><a href="#kgc" style="color:#ffd700;">KGC Offer</a></li>
       <li><a href="#about">About</a></li>
       <li><a href="#contents">Contents</a></li>
       <li><a href="#stories">Stories</a></li>
@@ -400,6 +492,50 @@
     </div>
     <div class="hero-cover">
       <img src="img/cover.png" alt="SHACL for the Practitioner — book cover" />
+    </div>
+  </div>
+</section>
+
+<!-- ─── Campaign: KGC Pre-order ─────────────────── -->
+<section class="campaign" id="kgc">
+  <div class="container">
+    <div>
+      <div class="campaign-badge">Conference Exclusive</div>
+      <h2>Pre-order &amp; <span>Pick Up in Person</span> at the Knowledge Graph Conference</h2>
+      <p>Pre-order your copy and collect it at KGC. No shipping, no waiting, and 20% off the regular price.</p>
+
+      <div class="campaign-perks">
+        <div class="campaign-perk">
+          <svg viewBox="0 0 24 24"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
+          <h4>Pick up in person</h4>
+          <p>Collect your book at the conference.</p>
+        </div>
+        <div class="campaign-perk">
+          <svg viewBox="0 0 24 24"><rect x="1" y="3" width="22" height="18" rx="2"/><path d="M1 9h22"/></svg>
+          <h4>Save on shipping</h4>
+          <p>No shipping cost to the US. No waiting.</p>
+        </div>
+        <div class="campaign-perk">
+          <svg viewBox="0 0 24 24"><path d="M20.59 13.41l-7.17 7.17a2 2 0 0 1-2.83 0L2 12V2h10l8.59 8.59a2 2 0 0 1 0 2.82z"/><line x1="7" y1="7" x2="7.01" y2="7"/></svg>
+          <h4>Get 20% off</h4>
+          <p>Enjoy 20% off with in-person pickup.</p>
+        </div>
+      </div>
+
+      <div class="campaign-dates">
+        Campaign period: <strong>April 27 &ndash; April 30, 2026</strong>
+      </div>
+    </div>
+
+    <div class="campaign-checkout">
+      <div class="discount-badge">20%</div>
+      <h3>Pre-order now</h3>
+      <p class="checkout-sub">Pick up at KGC</p>
+      <form action="https://www.paypal.com/ncp/payment/J9MSGXQKQP4KS" method="post" target="_blank" style="display:inline-grid;justify-items:center;align-content:start;gap:0.5rem;">
+        <input type="submit" value="Pre-order now" style="text-align:center;border:none;border-radius:0.25rem;min-width:11.625rem;padding:0 2rem;height:2.625rem;font-weight:bold;background-color:#FFD140;color:#000000;font-family:'Helvetica Neue',Arial,sans-serif;font-size:1rem;line-height:1.25rem;cursor:pointer;" />
+        <img src="https://www.paypalobjects.com/images/Debit_Credit_APM.svg" alt="cards" />
+        <section style="font-size:0.75rem;color:#888;">Powered by <img src="https://www.paypalobjects.com/paypal-ui/logos/svg/paypal-wordmark-color.svg" alt="PayPal" style="height:0.875rem;vertical-align:middle;" /></section>
+      </form>
     </div>
   </div>
 </section>
