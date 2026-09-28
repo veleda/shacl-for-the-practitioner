@@ -116,7 +116,7 @@
     }
     .hero-cover img {
       width: 340px;
-      border-radius: 8px;
+      border-radius: 0;
       box-shadow:
         0 25px 60px rgba(0,0,0,0.12),
         0 8px 20px rgba(0,0,0,0.08);
@@ -160,7 +160,7 @@
     .feature-card {
       padding: 1.5rem;
       background: #fafafa;
-      border-radius: 12px;
+      border-radius: 0;
       border: 1px solid rgba(0,0,0,0.05);
       transition: border-color 0.25s;
     }
@@ -168,7 +168,7 @@
     .feature-icon {
       width: 40px; height: 40px;
       background: rgba(200,160,0,0.1);
-      border-radius: 10px;
+      border-radius: 0;
       display: flex; align-items: center; justify-content: center;
       margin-bottom: 0.75rem;
     }
@@ -183,7 +183,7 @@
     }
     .toc-part {
       background: #fff;
-      border-radius: 12px;
+      border-radius: 0;
       padding: 2rem;
       border: 1px solid rgba(0,0,0,0.05);
       transition: box-shadow 0.25s, border-color 0.25s;
@@ -209,7 +209,7 @@
     }
     .story-card {
       padding: 1.75rem;
-      border-radius: 12px;
+      border-radius: 0;
       border: 1px solid rgba(0,0,0,0.06);
       background: #fafafa;
       transition: border-color 0.25s, transform 0.25s;
@@ -219,25 +219,161 @@
     .story-card .story-author { font-size: 0.82rem; color: #999; }
     .story-card .story-org { font-size: 0.78rem; color: #c8a000; margin-top: 0.25rem; }
 
-    /* ── Praise ─────────────────────────────────── */
-    .praise { background: #fafafa; }
-    .praise-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 2rem; }
-    .praise-card {
-      background: #fff;
-      padding: 2rem;
-      border-radius: 12px;
-      border: 1px solid rgba(0,0,0,0.05);
+    /* ── Community ──────────────────────────────── */
+    .community { background: #fafafa; }
+    .community-grid {
+      display: grid;
+      grid-template-columns: 2fr 1fr;
+      gap: 1.5rem;
+      align-items: start;
     }
-    .praise-card blockquote {
-      font-family: 'Source Serif 4', Georgia, serif;
-      font-size: 1.05rem;
-      font-style: italic;
+    .community-grid .span-full { grid-column: 1 / -1; }
+    .community-row-3 {
+      grid-column: 1 / -1;
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 1.5rem;
+      align-items: start;
+    }
+    .photo-pair {
+      grid-column: 1;
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 1.5rem;
+    }
+    .right-stack {
+      grid-column: 2;
+      grid-row: 1 / 3;
+      display: flex;
+      flex-direction: column;
+      gap: 1.5rem;
+    }
+
+    /* LinkedIn-style post card */
+    .li-card {
+      background: #fff;
+      border: 1px solid rgba(0,0,0,0.08);
+      border-radius: 0;
+      overflow: hidden;
+      transition: box-shadow 0.25s;
+      display: flex;
+      flex-direction: column;
+    }
+    .li-card:hover { box-shadow: 0 4px 20px rgba(0,0,0,0.08); }
+    .li-card-header {
+      display: flex;
+      align-items: center;
+      gap: 0.75rem;
+      padding: 1.25rem 1.25rem 0;
+    }
+    .li-avatar {
+      width: 48px; height: 48px;
+      border-radius: 50%;
+      background: #e8e4d0;
+      display: flex; align-items: center; justify-content: center;
+      font-weight: 700; font-size: 0.9rem; color: #8a7a00;
+      flex-shrink: 0;
+      overflow: hidden;
+    }
+    .li-avatar img {
+      width: 100%; height: 100%; object-fit: cover;
+    }
+    .li-meta { flex: 1; min-width: 0; }
+    .li-name {
+      font-size: 0.9rem; font-weight: 600; color: #1a1a1a;
+      display: flex; align-items: center; gap: 0.4rem;
+    }
+    .li-name .li-badge {
+      width: 16px; height: 16px;
+      display: inline-flex; align-items: center; justify-content: center;
+    }
+    .li-name .li-badge img { width: 14px; height: 14px; border-radius: 2px; }
+    .li-title { font-size: 0.78rem; color: #888; line-height: 1.4; }
+    .li-time { font-size: 0.72rem; color: #bbb; }
+    .li-link {
+      color: #bbb;
+      text-decoration: none;
+      flex-shrink: 0;
+      transition: color 0.2s;
+      display: flex;
+      align-items: center;
+    }
+    .li-link:hover { color: #c8a000; }
+    .li-link svg { width: 18px; height: 18px; }
+    .li-body {
+      padding: 0.75rem 1.25rem 1.25rem;
+      font-size: 0.88rem;
       color: #444;
       line-height: 1.65;
-      margin-bottom: 1rem;
+      flex: 1;
     }
-    .praise-card .praise-author { font-size: 0.85rem; font-weight: 600; }
-    .praise-card .praise-role { font-size: 0.8rem; color: #999; }
+    .li-body p { margin-bottom: 0.5rem; }
+    .li-body p:last-child { margin-bottom: 0; }
+    .li-post-img {
+      width: 100%;
+      max-height: 360px;
+      object-fit: cover;
+      display: block;
+    }
+    .li-reactions {
+      padding: 0 1.25rem 1rem;
+      font-size: 0.75rem;
+      color: #999;
+      border-top: 1px solid rgba(0,0,0,0.06);
+      padding-top: 0.6rem;
+      margin-top: auto;
+    }
+
+    /* Photo card */
+    .photo-card {
+      background: #fff;
+      border: 1px solid rgba(0,0,0,0.08);
+      border-radius: 0;
+      overflow: hidden;
+      transition: box-shadow 0.25s;
+    }
+    .photo-card:hover { box-shadow: 0 4px 20px rgba(0,0,0,0.08); }
+    .photo-card img {
+      width: 100%;
+      aspect-ratio: 4/3;
+      object-fit: cover;
+      display: block;
+    }
+    .photo-card .photo-caption {
+      padding: 1rem 1.25rem;
+      font-size: 0.82rem;
+      color: #666;
+      line-height: 1.5;
+    }
+
+    /* Goodreads card */
+    .gr-card {
+      background: #f4f1ea;
+      border: 1px solid #d6d0c4;
+      border-radius: 0;
+      overflow: hidden;
+      transition: box-shadow 0.25s;
+      display: flex;
+      flex-direction: column;
+    }
+    .gr-card:hover { box-shadow: 0 4px 20px rgba(0,0,0,0.08); }
+    .gr-card-header {
+      display: flex; align-items: center; gap: 0.75rem;
+      padding: 1.25rem 1.25rem 0;
+    }
+    .gr-stars { color: #e87400; font-size: 1.1rem; letter-spacing: 1px; }
+    .gr-card .li-body { flex: 1; }
+    .gr-badge {
+      font-size: 0.65rem; font-weight: 600; letter-spacing: 0.05em;
+      text-transform: uppercase; color: #382110;
+      background: #d6d0c4; padding: 0.2rem 0.5rem;
+    }
+
+    @media (max-width: 900px) {
+      .community-grid { grid-template-columns: 1fr; }
+      .community-row-3 { grid-template-columns: 1fr; }
+      .photo-pair { grid-template-columns: 1fr; }
+    }
 
     /* ── Details / Specs ───────────────────────── */
     .details { background: #1a1a1a; color: #fff; }
@@ -250,7 +386,7 @@
     .detail-item {
       padding: 1.5rem;
       background: rgba(255,255,255,0.04);
-      border-radius: 12px;
+      border-radius: 0;
       border: 1px solid rgba(255,255,255,0.06);
     }
     .detail-item .detail-label {
@@ -318,7 +454,7 @@
       margin: 0 auto;
       padding: 2rem;
       background: #fff;
-      border-radius: 16px;
+      border-radius: 0;
       border: 1px solid rgba(0,0,0,0.06);
       box-shadow: 0 4px 24px rgba(0,0,0,0.05);
     }
@@ -345,7 +481,6 @@
       .about .grid { grid-template-columns: 1fr; }
       .toc-grid { grid-template-columns: 1fr; }
       .stories-grid { grid-template-columns: 1fr; }
-      .praise-grid { grid-template-columns: 1fr; }
       .details-grid { grid-template-columns: 1fr 1fr; }
     }
     @media (max-width: 600px) {
@@ -367,7 +502,7 @@
       <li><a href="#stories">Stories</a></li>
       <li><a href="#details">Details</a></li>
       <li><a href="#faq">FAQ</a></li>
-      <li><a href="https://veronahe.no/playground/index.html">Course Playground</a></li>
+      <li><a href="playground/index.html">Course Playground</a></li>
       <li><a href="#buy" style="color:#c8a000;">Buy</a></li>
     </ul>
   </div>
@@ -537,23 +672,119 @@
   </div>
 </section>
 
-<!-- ─── Praise ──────────────────────────────────── -->
-<section class="praise" id="praise">
+<!-- ─── Community ───────────────────────────────── -->
+<section class="community" id="community">
   <div class="container">
     <div class="section-label">What Readers Say</div>
     <h2 class="section-title">From the community</h2>
-    <p class="section-subtitle" style="margin-bottom:2.5rem;">Reviewed and proofread by leading SHACL experts.</p>
-    <div class="praise-grid">
-      <div class="praise-card">
-        <blockquote>"The material is super useful for anyone working with graph technologies."</blockquote>
-        <div class="praise-author"><a href="https://www.goodreads.com/book/show/245855210-shacl-for-the-practitioner" target="_blank" style="color:inherit; text-decoration:underline; text-decoration-color:#c8a000;">Paco Nathan</a></div>
-        <div class="praise-role">Author · 5-star review on Goodreads</div>
+    <p class="section-subtitle" style="margin-bottom:2.5rem;">Reviews, posts and moments from readers around the world.</p>
+    <div class="community-grid">
+
+      <!-- ROW 1: Andy (left, tall) + Paco & Fred stacked (right) -->
+
+      <!-- Andy Fitzgerald -->
+      <div class="li-card">
+        <div class="li-card-header">
+          <div class="li-avatar">AF</div>
+          <div class="li-meta">
+            <div class="li-name">Andy Fitzgerald, PhD <span class="li-badge"><img src="img/community/linkedin-logo.webp" alt="LinkedIn"></span></div>
+            <div class="li-title">Information Architecture &amp; Content Strategy</div>
+            <div class="li-time">10mo</div>
+          </div>
+          <a class="li-link" href="https://www.linkedin.com/posts/andyfitzgerald_over-the-weekend-i-finished-veronika-heimsbakks-share-7396561071341408256-byAc/" target="_blank" title="Open on LinkedIn"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/></svg></a>
+        </div>
+        <div class="li-body">
+          <p>Over the weekend I finished Veronika Heimsbakk's new book "SHACL for the Practitioner." I've been eagerly awaiting this book's publication and delivery from sunny Norway since Veronika first announced its near completion months ago, and the delivered work lives up to my every expectation.</p>
+          <p>My enthusiasm for this (admittedly niche) topic is twofold: First, SHACL for the Practitioner means that we now have a complete set of approachable, reader-friendly books for the semantic web technologies that form the foundations of knowledge graphs (RDFS, OWL, SPARQL, SHACL).</p>
+          <p>Second, Veronika's clear, accessible style takes what could quickly become a technically obtuse topic and frames it as a pragmatic, down to earth complement to OWL and RDFS.</p>
+          <p>While SHACL isn't otherwise a starting place I would recommend to someone new to semantic web technologies, part one of this book, "Back to Basics", is hands down the clearest holistic overview I've seen of what the semantic stack seeks to accomplish and how the technologies fit together. Even if you need to come back to the rest of the book for a second pass after you've covered the other technologies elsewhere, this initial framing provides an admirable map for the rest of the semantic web territory.</p>
+          <p>Parts two and three provide an introduction to the nuts and bolts of designing, writing, and applying SHACL to validate data (of course), and then a selection of real-world case studies ("SHACL Stories") that illustrate the wide variety of applications for which SHACL provides practical data validation at scale. The coverage of SHACL shapes and constraints is concise and to-the-point, and kept relatable with a common example throughout. Some of the case studies were more accessible to me than others, but I suspect this is just right: everyone will bring their own background and experience to these stories, and there's a range of topics here to accommodate that.</p>
+          <p>I'm a hands-on learner, so I'm going to need to crack open a text editor to get a feel for some of these patterns and approaches, but I couldn't ask for a better introduction to this space. If you're like me and have been itching to round out your semantic web knowledge with SHACL, this is a fantastic place to start.</p>
+          <p>Thanks for a welcoming and informed introduction to SHACL, Veronika!</p>
+        </div>
+        <img class="li-post-img" src="img/community/andy-fitzgerald-book.png" alt="SHACL for the Practitioner on Andy's desk" />
+        <div class="li-reactions">101 reactions · 12 comments · 8 reposts</div>
       </div>
-      <div class="praise-card">
-        <blockquote>"I couldn't ask for a better introduction to this space."</blockquote>
-        <div class="praise-author"><a href="https://www.linkedin.com/posts/andyfitzgerald_over-the-weekend-i-finished-veronika-heimsbakks-activity-7396561074608726017-fGD-" target="_blank" style="color:inherit; text-decoration:underline; text-decoration-color:#c8a000;">Andy Fitzgerald, PhD</a></div>
-        <div class="praise-role">Content Operations Strategy &amp; Design</div>
+
+      <!-- Right stack: Paco + Fred -->
+      <div class="right-stack">
+
+        <!-- Paco Nathan — Goodreads -->
+        <div class="gr-card">
+          <div class="gr-card-header">
+            <div class="li-avatar">PN</div>
+            <div class="li-meta">
+              <div class="li-name">Paco Nathan</div>
+              <div class="li-title">Author · 10 books · 60 followers</div>
+              <div class="li-time"><span class="gr-stars">★★★★★</span> · January 18, 2026</div>
+            </div>
+            <a class="li-link" href="https://www.goodreads.com/book/show/245855210" target="_blank" title="Open on Goodreads"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/></svg></a>
+          </div>
+          <div class="li-body">
+            <p>This book provides a guided tour through the world of SHACL, developing themes with clear and highly accessible examples and illustrations. The material is super useful for anyone working with graph technologies, in terms of data quality, auditing, and so on -- though also increasingly in terms of inference. The latter half is a collection of case studies for production use cases.</p>
+            <p>SHACL is a locus for some of the most interesting and pragmatic work in semantic technologies currently, and Veronika Heimsbakk has consistently been one of the instructors/authors in the world about this.</p>
+          </div>
+          <div class="li-reactions"><span class="gr-badge">Goodreads</span></div>
+        </div>
+
+        <!-- Fred Dirkse -->
+        <div class="li-card">
+          <div class="li-card-header">
+            <div class="li-avatar">FD</div>
+            <div class="li-meta">
+              <div class="li-name">Fred Dirkse <span class="li-badge"><img src="img/community/linkedin-logo.webp" alt="LinkedIn"></span></div>
+              <div class="li-title">Enterprise Security Architect at Fiserv</div>
+              <div class="li-time">11mo</div>
+            </div>
+            <a class="li-link" href="https://www.linkedin.com/feed/update/urn:li:activity:7391472864304005120/" target="_blank" title="Open on LinkedIn"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/></svg></a>
+          </div>
+          <div class="li-body">
+            <p>Got my copy yesterday, exciting fit for the classic bookends: Semantic Web for the Working Ontologist &amp; Learning SPARQL</p>
+          </div>
+        </div>
+
+        <!-- Book launch photo -->
+        <div class="photo-card">
+          <img src="img/community/book-launch-oslo.png" alt="Veronika at the SHACL book launch in Oslo, October 2025" />
+          <div class="photo-caption">Book launch with the Knowledge Graph Oslo community, October 2025</div>
+        </div>
+
+        <!-- Alexander Belin -->
+        <div class="li-card">
+          <div class="li-card-header">
+            <div class="li-avatar">AB</div>
+            <div class="li-meta">
+              <div class="li-name">Alexander Belin <span class="li-badge"><img src="img/community/linkedin-logo.webp" alt="LinkedIn"></span></div>
+              <div class="li-title">Enterprise Knowledge Architect, Certified Knowledge Manager, Lead Level ...</div>
+              <div class="li-time">10mo</div>
+            </div>
+            <a class="li-link" href="https://www.linkedin.com/posts/belinalexander_shacl-semanticweb-rdf-ugcPost-7393507961760927744-hmR6/" target="_blank" title="Open on LinkedIn"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/></svg></a>
+          </div>
+          <div class="li-body">
+            <p>Just got my copy of "SHACL for the Practitioner", and look at this!<br>A handwritten note, a bookmark, and the cutest stickers ever ("Messy data? Not on my shape" one is my favorite 😂).</p>
+            <p>Veronika Heimsbakk thank you for making it feel so personal.</p>
+            <p>Can't wait to dive in!</p>
+            <p>Stay sharp, stay shaped!</p>
+            <p style="color:#0a66c2">#SHACL #SemanticWeb #RDF #KnowledgeGraphs</p>
+          </div>
+          <img class="li-post-img" src="img/community/alexander-belin-book.png" alt="Alexander's copy with handwritten note, bookmark and stickers" />
+          <div class="li-reactions">14 reactions · 1 comment</div>
+        </div>
+
       </div>
+
+      <!-- ROW 2: CDL + Dean side by side -->
+      <div class="photo-pair">
+        <div class="photo-card">
+          <img src="img/community/connected-data-london.jpg" alt="Book stand at Connected Data London 2025" />
+          <div class="photo-caption">Book stand at Connected Data London, December 2025</div>
+        </div>
+        <div class="photo-card">
+          <img src="img/community/dean-allemang.png" alt="Dean Allemang with SHACL for the Practitioner" style="aspect-ratio:3/4; object-fit:cover; object-position:center" />
+          <div class="photo-caption">Dean Allemang — co-author of Semantic Web for the Working Ontologist — with his copy</div>
+        </div>
+      </div>
+
     </div>
   </div>
 </section>

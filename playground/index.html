@@ -1,0 +1,3096 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1.0"/>
+<title>SHACL Course Playground</title>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet"/>
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.16/codemirror.min.css"/>
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+html{font-size:15px;scroll-behavior:smooth}
+body{font-family:'Inter',system-ui,sans-serif;background:#fafafa;color:#1a1a1a;line-height:1.6}
+code,pre,.editor,.output{font-family:'JetBrains Mono','Fira Code',monospace}
+
+/* ── Layout ─────────────────────────── */
+.top-bar{background:#1a1a1a;color:#fff;padding:.75rem 2rem;position:sticky;top:0;z-index:100}
+.top-bar h1{font-size:1rem;font-weight:600;letter-spacing:-.01em}
+.top-bar h1 span{color:#ffd700}
+.container{max-width:1200px;margin:0 auto;padding:2rem}
+
+/* ── Tabs ───────────────────────────── */
+.tab-bar{display:flex;gap:.15rem;border-bottom:2px solid #e5e5e5;margin-bottom:2rem;overflow:hidden}
+.tab-btn{padding:.6rem .9rem;font-size:.78rem;font-weight:600;border:none;background:none;cursor:pointer;color:#888;border-bottom:2px solid transparent;margin-bottom:-2px;white-space:nowrap;transition:all .2s}
+.tab-btn:hover{color:#1a1a1a}
+.tab-btn.active{color:#1a1a1a;border-bottom-color:#ffd700}
+.tab-panel{display:none}
+.tab-panel.active{display:block}
+
+/* ── Section headers ────────────────── */
+.section-badge{display:inline-block;font-size:.65rem;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:#1a1a1a;background:#ffd700;padding:.25rem .7rem;border-radius:100px;margin-bottom:.75rem}
+.section-title{font-size:1.4rem;font-weight:700;margin-bottom:.5rem}
+.section-desc{font-size:.9rem;color:#666;margin-bottom:1.5rem;max-width:700px}
+
+/* ── Editor ─────────────────────────── */
+.playground-grid{display:grid;grid-template-columns:1fr 1fr;gap:1rem;margin-bottom:2rem}
+.pane{background:#fff;border:1px solid #e5e5e5;border-radius:10px;overflow:hidden;display:flex;flex-direction:column}
+.pane-header{padding:.6rem 1rem;background:#f5f5f5;border-bottom:1px solid #e5e5e5;display:flex;align-items:center;justify-content:space-between}
+.pane-header h3{font-size:.78rem;font-weight:600;text-transform:uppercase;letter-spacing:.06em;color:#888}
+.pane-header .dot{width:8px;height:8px;border-radius:50%;background:#ffd700}
+.editor{width:100%;min-height:320px;padding:1rem;border:none;resize:vertical;font-size:.82rem;line-height:1.7;background:#fff;color:#1a1a1a;outline:none;tab-size:2}
+.output{padding:1rem;font-size:.82rem;line-height:1.7;min-height:320px;background:#fafafa;color:#555;overflow:auto;white-space:pre-wrap}
+
+/* ── CodeMirror overrides ─────────────── */
+.CodeMirror{font-family:'JetBrains Mono',monospace;font-size:.82rem;line-height:1.7;height:320px;border:none}
+.CodeMirror-vscrollbar{width:6px !important}
+.CodeMirror-vscrollbar::-webkit-scrollbar{width:6px}
+.CodeMirror-vscrollbar::-webkit-scrollbar-track{background:transparent}
+.CodeMirror-vscrollbar::-webkit-scrollbar-thumb{background:#ccc;border-radius:3px}
+.CodeMirror-vscrollbar::-webkit-scrollbar-thumb:hover{background:#aaa}
+.pane-output .CodeMirror{background:#fafafa;height:280px}
+
+/* ── Buttons ────────────────────────── */
+.btn-row{display:flex;gap:.5rem;margin-bottom:1.5rem;flex-wrap:wrap}
+.btn{padding:.5rem 1.2rem;font-size:.8rem;font-weight:600;border:none;border-radius:100px;cursor:pointer;transition:all .2s}
+.btn-dark{background:#1a1a1a;color:#fff}
+.btn-dark:hover{background:#ffd700;color:#1a1a1a}
+.btn-outline{background:transparent;color:#1a1a1a;border:1.5px solid #ddd}
+.btn-outline:hover{border-color:#ffd700;color:#c8a000}
+.btn-small{padding:.35rem .8rem;font-size:.72rem}
+
+/* ── Validation output styling ─────── */
+.result-pass{color:#16a34a}
+.result-fail{color:#dc2626}
+.result-warn{color:#d97706}
+
+/* ── Cheat sheet table ──────────────── */
+.cheat-table{width:100%;border-collapse:collapse;font-size:.82rem;margin-bottom:2rem}
+.cheat-table th{text-align:left;padding:.6rem .8rem;background:#1a1a1a;color:#fff;font-weight:600;font-size:.72rem;text-transform:uppercase;letter-spacing:.05em}
+.cheat-table th:first-child{border-radius:8px 0 0 0}
+.cheat-table th:last-child{border-radius:0 8px 0 0}
+.cheat-table td{padding:.55rem .8rem;border-bottom:1px solid #f0f0f0;vertical-align:top}
+.cheat-table tr:hover td{background:#fffde6}
+.cheat-table code{background:#f5f5f5;padding:.1rem .35rem;border-radius:4px;font-size:.78rem;color:#c8a000}
+.cat-label{font-size:.65rem;font-weight:700;text-transform:uppercase;letter-spacing:.08em;color:#fff;background:#c8a000;padding:.15rem .5rem;border-radius:4px;display:inline-block}
+
+/* ── Exercise cards ─────────────────── */
+.exercise-list{display:flex;flex-direction:column;gap:1rem;margin-bottom:2rem}
+.exercise-card{background:#fff;border:1px solid #e5e5e5;border-radius:10px;padding:1.25rem 1.5rem;transition:border-color .2s}
+.exercise-card:hover{border-color:#ffd700}
+.exercise-num{font-size:.65rem;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:#c8a000;margin-bottom:.35rem}
+.exercise-card h4{font-size:.95rem;font-weight:600;margin-bottom:.4rem}
+.exercise-card p{font-size:.85rem;color:#666;line-height:1.55}
+.exercise-card details{margin-top:.75rem}
+.exercise-card summary{font-size:.8rem;font-weight:600;color:#c8a000;cursor:pointer}
+.exercise-card details pre{margin-top:.5rem;background:#f9f9f0;padding:.75rem;border-radius:6px;font-size:.78rem;overflow-x:auto;border:1px solid #f0ecd0}
+
+/* ── Exercise block picker ─────────── */
+.block-grid{display:grid;grid-template-columns:1fr 1fr;gap:1rem;margin-bottom:2rem}
+.block-card{background:#fff;border:2px solid #e5e5e5;border-radius:12px;padding:1.5rem;cursor:pointer;transition:all .2s}
+.block-card:hover{border-color:#ffd700;box-shadow:0 4px 16px rgba(255,215,0,.15)}
+.block-card .block-letter{display:inline-block;font-size:.65rem;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:#1a1a1a;background:#ffd700;padding:.2rem .6rem;border-radius:100px;margin-bottom:.6rem}
+.block-card h3{font-size:1rem;font-weight:700;margin-bottom:.3rem}
+.block-card p{font-size:.82rem;color:#666;line-height:1.5;margin:0}
+.block-card .block-exercises{font-size:.75rem;color:#c8a000;font-weight:600;margin-top:.6rem}
+.block-card.block-capstone{border-color:#ffd700;background:#fffde6}
+@media(max-width:600px){.block-grid{grid-template-columns:1fr}}
+
+/* ── Logic truth table ──────────────── */
+.logic-table{border-collapse:collapse;font-size:.82rem;margin-bottom:1.5rem}
+.logic-table th,.logic-table td{padding:.4rem .7rem;border:1px solid #e5e5e5;text-align:center}
+.logic-table th{background:#1a1a1a;color:#fff;font-weight:600;font-size:.72rem}
+.logic-table .true{color:#16a34a;font-weight:600}
+.logic-table .false{color:#dc2626;font-weight:600}
+
+/* ── Collapsible exercises ─────────── */
+.exercise-card{cursor:pointer}
+.exercise-header{display:flex;align-items:flex-start;gap:.75rem}
+.exercise-header-text{flex:1}
+.exercise-toggle{font-size:.7rem;color:#aaa;margin-top:.3rem;transition:transform .2s;flex-shrink:0;width:1rem;text-align:center}
+.exercise-card.open .exercise-toggle{transform:rotate(90deg);color:#c8a000}
+.exercise-body{display:none;margin-top:1rem;border-top:1px solid #f0f0f0;padding-top:1rem}
+.exercise-card.open .exercise-body{display:block}
+[id^="ex-block-"] .exercise-body{display:block;border-top:none;margin-top:0;padding-top:0}
+[id^="ex-block-"] .exercise-toggle{display:none}
+[id^="ex-block-"] .exercise-header{cursor:default}
+.exercise-body p{cursor:default}
+
+/* ── Exercise editor ───────────────── */
+.exercise-editor-wrap{margin-top:.75rem;border:1px solid #e5e5e5;border-radius:8px;overflow:hidden}
+.exercise-editor-wrap .CodeMirror{height:180px;font-size:.78rem}
+.exercise-feedback{margin-top:.5rem;font-size:.8rem;padding:.4rem .7rem;border-radius:6px;display:none}
+.exercise-feedback.show{display:block}
+.exercise-feedback.pass{background:#f0fdf4;color:#16a34a;border:1px solid #bbf7d0}
+.exercise-feedback.fail{background:#fef2f2;color:#dc2626;border:1px solid #fecaca}
+.exercise-feedback.info{background:#fffbeb;color:#92400e;border:1px solid #fde68a}
+
+/* ── Solution reveal ───────────────── */
+.exercise-solution{margin-top:.75rem;display:none}
+.exercise-solution.show{display:block}
+.exercise-solution-header{font-size:.75rem;font-weight:600;color:#888;text-transform:uppercase;letter-spacing:.06em;margin-bottom:.4rem}
+.exercise-solution-wrap{border:1px solid #e0dcc0;border-radius:8px;overflow:hidden;background:#f9f9f0}
+.exercise-solution-wrap .CodeMirror{height:auto;background:#f9f9f0;font-size:.78rem}
+
+/* ── Conceptual answer text ────────── */
+.exercise-answer-text{background:#f9f9f0;padding:.75rem;border-radius:6px;font-size:.82rem;line-height:1.6;border:1px solid #f0ecd0;font-family:'JetBrains Mono',monospace;white-space:pre-wrap}
+
+/* ── Quiz ──────────────────────────── */
+.quiz-question{background:#fff;border:1px solid #e5e5e5;border-radius:10px;padding:1.25rem 1.5rem;margin-bottom:1rem;transition:border-color .2s}
+.quiz-question:hover{border-color:#ffd700}
+.quiz-question.correct{border-color:#16a34a;background:#f0fdf4}
+.quiz-question.incorrect{border-color:#dc2626;background:#fef2f2}
+.quiz-q-num{font-size:.65rem;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:#c8a000;margin-bottom:.35rem}
+.quiz-q-text{font-size:.92rem;font-weight:600;margin-bottom:.75rem;line-height:1.5}
+.quiz-q-text code{background:#f5f5f5;padding:.1rem .4rem;border-radius:4px;font-size:.82rem;color:#c8a000}
+.quiz-q-text .quiz-code-block{display:block;background:#f5f5f5;padding:.6rem .8rem;border-radius:6px;margin-top:.5rem;font-family:'JetBrains Mono',monospace;font-size:.78rem;color:#1a1a1a;white-space:pre;overflow-x:auto;line-height:1.6}
+.quiz-options{list-style:none;display:flex;flex-direction:column;gap:.4rem}
+.quiz-opt{display:flex;align-items:flex-start;gap:.6rem;padding:.55rem .8rem;border:1.5px solid #e5e5e5;border-radius:8px;cursor:pointer;transition:all .15s;font-size:.85rem;line-height:1.5}
+.quiz-opt:hover{border-color:#ffd700;background:#fffde6}
+.quiz-opt.selected{border-color:#c8a000;background:#fffde6;font-weight:600}
+.quiz-opt.selected.reveal-correct{border-color:#16a34a;background:#f0fdf4}
+.quiz-opt.selected.reveal-wrong{border-color:#dc2626;background:#fef2f2}
+.quiz-opt.reveal-correct:not(.selected){border-color:#16a34a;background:#f0fdf4;opacity:.7}
+.quiz-opt input[type="radio"]{margin-top:.2rem;accent-color:#c8a000;flex-shrink:0}
+.quiz-explanation{display:none;margin-top:.6rem;font-size:.82rem;color:#555;padding:.6rem .8rem;background:#fafafa;border-radius:6px;line-height:1.55;border:1px solid #e5e5e5}
+.quiz-explanation.show{display:block}
+.quiz-explanation code{background:#f0f0f0;padding:.1rem .3rem;border-radius:3px;font-size:.78rem}
+.quiz-controls{display:flex;gap:.75rem;align-items:center;flex-wrap:wrap;margin-bottom:1.5rem}
+.quiz-progress{font-size:.85rem;color:#666}
+.quiz-progress strong{color:#1a1a1a}
+.quiz-score-bar{height:8px;background:#e5e5e5;border-radius:100px;flex:1;min-width:200px;overflow:hidden}
+.quiz-score-fill{height:100%;background:#c8a000;border-radius:100px;transition:width .4s ease}
+.quiz-badge-wrap{text-align:center;padding:2rem;display:none}
+.quiz-badge-wrap.show{display:block}
+.quiz-badge{display:inline-block;padding:1.5rem 2.5rem;border-radius:16px;background:linear-gradient(135deg,#ffd700 0%,#f0c000 100%);color:#1a1a1a;box-shadow:0 4px 24px rgba(255,215,0,.35)}
+.quiz-badge h3{font-size:1.3rem;font-weight:700;margin-bottom:.25rem}
+.quiz-badge p{font-size:.85rem;opacity:.8}
+.quiz-badge .badge-icon{font-size:2.5rem;margin-bottom:.5rem}
+.quiz-retry{display:none;text-align:center;padding:1.5rem}
+.quiz-retry.show{display:block}
+.quiz-retry p{font-size:.9rem;color:#666;margin-bottom:1rem}
+
+/* ── Password gate ─────────────────── */
+.pw-overlay{position:fixed;inset:0;z-index:9999;background:#fafafa;display:flex;align-items:center;justify-content:center;transition:opacity .4s}
+.pw-overlay.hide{opacity:0;pointer-events:none}
+.pw-box{text-align:center;max-width:360px;width:90%}
+.pw-box h2{font-size:1.3rem;font-weight:700;margin-bottom:.25rem}
+.pw-box h2 span{color:#ffd700}
+.pw-box p{font-size:.85rem;color:#888;margin-bottom:1.5rem}
+.pw-input{width:100%;padding:.65rem 1rem;font-size:.9rem;font-family:'Inter',sans-serif;border:1.5px solid #ddd;border-radius:100px;outline:none;text-align:center;transition:border-color .2s}
+.pw-input:focus{border-color:#ffd700}
+.pw-input.error{border-color:#dc2626;animation:pw-shake .35s}
+.pw-submit{margin-top:.75rem;width:100%;padding:.6rem;font-size:.85rem;font-weight:600;border:none;border-radius:100px;background:#1a1a1a;color:#fff;cursor:pointer;transition:background .2s}
+.pw-submit:hover{background:#ffd700;color:#1a1a1a}
+.pw-hint{font-size:.75rem;color:#dc2626;margin-top:.5rem;min-height:1.1em}
+@keyframes pw-shake{0%,100%{transform:translateX(0)}25%{transform:translateX(-6px)}50%{transform:translateX(6px)}75%{transform:translateX(-4px)}}
+
+/* ── Responsive ─────────────────────── */
+@media(max-width:800px){
+  .playground-grid{grid-template-columns:1fr}
+  .container{padding:1rem}
+  .top-bar{padding:.5rem 1rem}
+  .top-bar nav{gap:.75rem}
+}
+</style>
+<script src="https://cdn.jsdelivr.net/npm/n3@1.17.3/browser/n3.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.16/codemirror.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.16/mode/turtle/turtle.min.js"></script>
+</head>
+<body>
+
+<!-- ═══════════════════════════════════════════ -->
+<!--  PASSWORD GATE                              -->
+<!-- ═══════════════════════════════════════════ -->
+<div class="pw-overlay" id="pw-overlay">
+  <div class="pw-box">
+    <h2>SHACL <span>Course Playground</span></h2>
+    <p>This resource is for enrolled students.<br/>Enter the course password to continue.</p>
+    <form onsubmit="return checkPassword()">
+      <input class="pw-input" id="pw-input" type="password" placeholder="Password" autocomplete="off" autofocus/>
+      <button class="pw-submit" type="submit">Enter</button>
+    </form>
+    <div class="pw-hint" id="pw-hint"></div>
+  </div>
+</div>
+<script>
+(function(){
+  // Skip gate if already authenticated this session
+  if (sessionStorage.getItem('shacl-pw-ok') === '1') {
+    document.getElementById('pw-overlay').classList.add('hide');
+    setTimeout(function(){ document.getElementById('pw-overlay').style.display='none'; }, 400);
+  }
+})();
+function checkPassword() {
+  var input = document.getElementById('pw-input');
+  // Simple hash comparison to avoid plain-text in source
+  var hash = 0, pw = input.value;
+  for (var i = 0; i < pw.length; i++) {
+    hash = ((hash << 5) - hash) + pw.charCodeAt(i);
+    hash |= 0;
+  }
+  if (hash === 1907028331) {
+    sessionStorage.setItem('shacl-pw-ok', '1');
+    var overlay = document.getElementById('pw-overlay');
+    overlay.classList.add('hide');
+    setTimeout(function(){ overlay.style.display='none'; }, 400);
+  } else {
+    input.classList.add('error');
+    document.getElementById('pw-hint').textContent = 'Incorrect password. Please try again.';
+    setTimeout(function(){ input.classList.remove('error'); }, 400);
+    input.value = '';
+    input.focus();
+  }
+  return false;
+}
+</script>
+
+<div class="top-bar">
+  <h1>SHACL <span>Course Playground</span></h1>
+</div>
+
+<div class="container">
+
+<!-- ═══════════════════════════════════════════ -->
+<!--  TAB BAR                                   -->
+<!-- ═══════════════════════════════════════════ -->
+<div class="tab-bar">
+  <button class="tab-btn active" data-tab="playground">Shapes Editor</button>
+  <button class="tab-btn" data-tab="reference">Reference</button>
+  <button class="tab-btn" data-tab="agenda">Agenda</button>
+  <button class="tab-btn" data-tab="exercises">Exercises</button>
+  <button class="tab-btn" data-tab="quiz">Quiz</button>
+</div>
+
+<!-- ═══════════════════════════════════════════ -->
+<!--  TAB: PLAYGROUND                            -->
+<!-- ═══════════════════════════════════════════ -->
+<div class="tab-panel active" id="playground">
+  <div class="section-badge">Playground</div>
+  <h2 class="section-title">SHACL Shapes Editor</h2>
+  <p class="section-desc">Write your shapes graph (left) and data graph (right) in Turtle syntax. Use the preloaded examples or start from scratch.</p>
+
+  <div class="btn-row">
+    <button class="btn btn-dark" onclick="loadExample('book')">Book Example (Ch. 6)</button>
+    <button class="btn btn-outline" onclick="loadExample('person')">Person Example</button>
+    <button class="btn btn-outline" onclick="loadExample('lotr')">Lord of the Rings</button>
+    <button class="btn btn-outline" onclick="loadExample('blank')">Start Blank</button>
+    <button class="btn btn-outline" onclick="loadExample('capstone')">Capstone Template</button>
+  </div>
+
+  <div class="playground-grid">
+    <div class="pane">
+      <div class="pane-header"><h3>Shapes Graph</h3><div class="dot"></div></div>
+      <textarea id="shapes-editor"></textarea>
+    </div>
+    <div class="pane">
+      <div class="pane-header"><h3>Data Graph</h3><div class="dot"></div></div>
+      <textarea id="data-editor"></textarea>
+    </div>
+  </div>
+
+  <div class="btn-row">
+    <button class="btn btn-dark" onclick="runValidation()">Validate</button>
+    <button class="btn btn-outline" onclick="clearOutput()">Clear Output</button>
+    <button class="btn btn-outline" onclick="downloadTurtle()">Download .ttl</button>
+  </div>
+
+  <div class="pane pane-output" style="margin-bottom:2rem">
+    <div class="pane-header"><h3>Output / Notes</h3></div>
+    <textarea id="output"></textarea>
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════════════ -->
+<!--  TAB: CHEAT SHEET                           -->
+<!-- ═══════════════════════════════════════════ -->
+<div class="tab-panel" id="reference">
+  <div class="section-badge">Reference</div>
+  <h2 class="section-title">SHACL Reference</h2>
+  <p class="section-desc">Quick-reference material from the book. Pick a topic below.</p>
+
+  <div class="ref-toggle" style="display:flex;gap:.35rem;margin-bottom:1.5rem">
+    <button class="btn btn-dark" id="ref-btn-cheatsheet" onclick="showRefView('cheatsheet')">Constraint Cheat Sheet</button>
+    <button class="btn btn-outline" id="ref-btn-logic" onclick="showRefView('logic')">Logic &amp; Truth Tables</button>
+  </div>
+
+  <div id="ref-view-cheatsheet">
+  <h3 style="font-size:1.1rem;font-weight:700;margin-bottom:.75rem">Core Constraint Components (Ch. 6)</h3>
+
+  <table class="cheat-table">
+    <thead>
+      <tr><th>Category</th><th>Constraint</th><th>SHACL Property</th><th>Description</th><th>Example Value</th></tr>
+    </thead>
+    <tbody>
+      <tr><td><span class="cat-label">Shape</span></td><td>Property</td><td><code>sh:property</code></td><td>Links a node shape to its property shapes</td><td><code>rule:Book-author</code></td></tr>
+      <tr><td><span class="cat-label">Shape</span></td><td>Node</td><td><code>sh:node</code></td><td>Inherit constraints from another node shape</td><td><code>rule:Work</code></td></tr>
+      <tr><td><span class="cat-label">Shape</span></td><td>Qualified Value Shape</td><td><code>sh:qualifiedValueShape</code></td><td>Constraints for a number of value nodes conforming to a shape</td><td><code>[ sh:class ex:Finger ]</code></td></tr>
+
+      <tr><td><span class="cat-label">Value Type</span></td><td>Class</td><td><code>sh:class</code></td><td>Value node must be instance of given class</td><td><code>foaf:Person</code></td></tr>
+      <tr><td><span class="cat-label">Value Type</span></td><td>Datatype</td><td><code>sh:datatype</code></td><td>Value node must be literal of given datatype</td><td><code>xsd:integer</code></td></tr>
+      <tr><td><span class="cat-label">Value Type</span></td><td>Node Kind</td><td><code>sh:nodeKind</code></td><td>Value node must be IRI, Literal, or BlankNode</td><td><code>sh:IRI</code></td></tr>
+
+      <tr><td><span class="cat-label">Cardinality</span></td><td>Min Count</td><td><code>sh:minCount</code></td><td>Minimum occurrences of the property</td><td><code>1</code></td></tr>
+      <tr><td><span class="cat-label">Cardinality</span></td><td>Max Count</td><td><code>sh:maxCount</code></td><td>Maximum occurrences of the property</td><td><code>1</code></td></tr>
+
+      <tr><td><span class="cat-label">Value Range</span></td><td>Min Exclusive</td><td><code>sh:minExclusive</code></td><td>Value must be &gt; given value</td><td><code>"1999-12-31"^^xsd:date</code></td></tr>
+      <tr><td><span class="cat-label">Value Range</span></td><td>Min Inclusive</td><td><code>sh:minInclusive</code></td><td>Value must be &ge; given value</td><td><code>0</code></td></tr>
+      <tr><td><span class="cat-label">Value Range</span></td><td>Max Exclusive</td><td><code>sh:maxExclusive</code></td><td>Value must be &lt; given value</td><td><code>10000</code></td></tr>
+      <tr><td><span class="cat-label">Value Range</span></td><td>Max Inclusive</td><td><code>sh:maxInclusive</code></td><td>Value must be &le; given value</td><td><code>10000</code></td></tr>
+
+      <tr><td><span class="cat-label">String</span></td><td>Min Length</td><td><code>sh:minLength</code></td><td>Minimum character count</td><td><code>2</code></td></tr>
+      <tr><td><span class="cat-label">String</span></td><td>Max Length</td><td><code>sh:maxLength</code></td><td>Maximum character count</td><td><code>11</code></td></tr>
+      <tr><td><span class="cat-label">String</span></td><td>Pattern</td><td><code>sh:pattern</code></td><td>Must match regular expression</td><td><code>"^(?:\d{9}[\dX]|\d{13})$"</code></td></tr>
+      <tr><td><span class="cat-label">String</span></td><td>Language In</td><td><code>sh:languageIn</code></td><td>Language tag must be in given list</td><td><code>("en" "no" "de")</code></td></tr>
+      <tr><td><span class="cat-label">String</span></td><td>Unique Lang</td><td><code>sh:uniqueLang</code></td><td>Only one value per language tag</td><td><code>true</code></td></tr>
+
+      <tr><td><span class="cat-label">Prop. Pair</span></td><td>Equals</td><td><code>sh:equals</code></td><td>Values must equal those of another property</td><td><code>ex:mainTitle</code></td></tr>
+      <tr><td><span class="cat-label">Prop. Pair</span></td><td>Disjoint</td><td><code>sh:disjoint</code></td><td>Values must not overlap with another property</td><td><code>ex:editor</code></td></tr>
+      <tr><td><span class="cat-label">Prop. Pair</span></td><td>Less Than</td><td><code>sh:lessThan</code></td><td>Value must be less than other property's value</td><td><code>ex:secondEdition</code></td></tr>
+      <tr><td><span class="cat-label">Prop. Pair</span></td><td>Less Than Or Eq.</td><td><code>sh:lessThanOrEquals</code></td><td>Value must be &le; other property's value</td><td><code>ex:endDate</code></td></tr>
+
+      <tr><td><span class="cat-label">Logical</span></td><td>Not</td><td><code>sh:not</code></td><td>Must NOT conform to given shape (negation, &not;x)</td><td><code>rule:Agent-status</code></td></tr>
+      <tr><td><span class="cat-label">Logical</span></td><td>And</td><td><code>sh:and</code></td><td>Must conform to ALL shapes in list (x &and; y)</td><td><code>( rule:A rule:B )</code></td></tr>
+      <tr><td><span class="cat-label">Logical</span></td><td>Or</td><td><code>sh:or</code></td><td>Must conform to at least ONE shape (x &or; y)</td><td><code>( rule:A rule:B )</code></td></tr>
+      <tr><td><span class="cat-label">Logical</span></td><td>Xone</td><td><code>sh:xone</code></td><td>Must conform to exactly ONE shape (x &oplus; y)</td><td><code>( rule:A rule:B )</code></td></tr>
+
+      <tr><td><span class="cat-label">Other</span></td><td>Closed</td><td><code>sh:closed</code></td><td>Only declared properties allowed</td><td><code>true</code></td></tr>
+      <tr><td><span class="cat-label">Other</span></td><td>Ignored Properties</td><td><code>sh:ignoredProperties</code></td><td>Properties excluded from closed check</td><td><code>(rdf:type)</code></td></tr>
+      <tr><td><span class="cat-label">Other</span></td><td>Has Value</td><td><code>sh:hasValue</code></td><td>At least one value node must equal given value</td><td><code>ex:Fantasy</code></td></tr>
+      <tr><td><span class="cat-label">Other</span></td><td>In</td><td><code>sh:in</code></td><td>Value node must be in given list</td><td><code>( ex:Fantasy ex:SciFi )</code></td></tr>
+    </tbody>
+  </table>
+
+  <div class="section-badge">Targets</div>
+  <h3 style="font-size:1.1rem;font-weight:700;margin:.75rem 0 .5rem">Target Types (Ch. 5)</h3>
+  <table class="cheat-table" style="max-width:700px">
+    <thead><tr><th>Target</th><th>SHACL Property</th><th>Targets</th></tr></thead>
+    <tbody>
+      <tr><td>Target Class</td><td><code>sh:targetClass</code></td><td>All instances of a class</td></tr>
+      <tr><td>Target Node</td><td><code>sh:targetNode</code></td><td>One specific node</td></tr>
+      <tr><td>Target Subjects Of</td><td><code>sh:targetSubjectsOf</code></td><td>All subjects of a property (domain)</td></tr>
+      <tr><td>Target Objects Of</td><td><code>sh:targetObjectsOf</code></td><td>All objects of a property (range)</td></tr>
+      <tr><td>Implicit Class Target</td><td>Shape typed as <code>rdfs:Class</code></td><td>The class itself is the target</td></tr>
+    </tbody>
+  </table>
+
+  <div class="section-badge">Property Paths</div>
+  <h3 style="font-size:1.1rem;font-weight:700;margin:.75rem 0 .5rem">Property Paths (Ch. 5.5)</h3>
+  <table class="cheat-table" style="max-width:700px">
+    <thead><tr><th>Path Type</th><th>SPARQL</th><th>SHACL (in sh:path)</th></tr></thead>
+    <tbody>
+      <tr><td>Predicate</td><td><code>iri</code></td><td><code>sh:path ex:author</code></td></tr>
+      <tr><td>Inverse</td><td><code>^iri</code></td><td><code>sh:inversePath ex:author</code></td></tr>
+      <tr><td>Sequence</td><td><code>a/b</code></td><td><code>( ex:author ex:name )</code></td></tr>
+      <tr><td>Alternative</td><td><code>a|b</code></td><td><code>sh:alternativePath ( a b )</code></td></tr>
+      <tr><td>Zero-or-more</td><td><code>a*</code></td><td><code>sh:zeroOrMorePath ex:a</code></td></tr>
+      <tr><td>One-or-more</td><td><code>a+</code></td><td><code>sh:oneOrMorePath ex:a</code></td></tr>
+      <tr><td>Zero-or-one</td><td><code>a?</code></td><td><code>sh:zeroOrOnePath ex:a</code></td></tr>
+    </tbody>
+  </table>
+  </div><!-- /ref-view-cheatsheet -->
+
+  <div id="ref-view-logic" style="display:none">
+  <h3 style="font-size:1.1rem;font-weight:700;margin-bottom:.75rem">Logical Operators &amp; Truth Tables (Ch. 6.7)</h3>
+
+  <table class="cheat-table" style="max-width:600px;margin-bottom:1.5rem">
+    <thead><tr><th>Operation</th><th>Operator</th><th>Notation</th><th>SHACL</th></tr></thead>
+    <tbody>
+      <tr><td>Conjunction</td><td>AND</td><td>x &and; y</td><td><code>sh:and</code></td></tr>
+      <tr><td>Disjunction</td><td>OR</td><td>x &or; y</td><td><code>sh:or</code></td></tr>
+      <tr><td>Exclusive OR</td><td>XOR</td><td>x &oplus; y</td><td><code>sh:xone</code></td></tr>
+      <tr><td>Negation</td><td>NOT</td><td>&not;x</td><td><code>sh:not</code></td></tr>
+    </tbody>
+  </table>
+
+  <table class="logic-table">
+    <thead><tr><th>x</th><th>y</th><th>x &and; y<br><small>sh:and</small></th><th>x &or; y<br><small>sh:or</small></th><th>x &oplus; y<br><small>sh:xone</small></th><th>&not;x<br><small>sh:not</small></th></tr></thead>
+    <tbody>
+      <tr><td class="false">0</td><td class="false">0</td><td class="false">0</td><td class="false">0</td><td class="false">0</td><td class="true">1</td></tr>
+      <tr><td class="true">1</td><td class="false">0</td><td class="false">0</td><td class="true">1</td><td class="true">1</td><td class="false">0</td></tr>
+      <tr><td class="false">0</td><td class="true">1</td><td class="false">0</td><td class="true">1</td><td class="true">1</td><td class="true">1</td></tr>
+      <tr><td class="true">1</td><td class="true">1</td><td class="true">1</td><td class="true">1</td><td class="false">0</td><td class="false">0</td></tr>
+    </tbody>
+  </table>
+
+  <div style="margin-top:1.5rem;padding:1.25rem;background:#fff;border:1px solid #e5e5e5;border-radius:10px;max-width:600px">
+    <h4 style="font-size:.9rem;margin-bottom:.5rem">Reading the truth table</h4>
+    <p style="font-size:.85rem;color:#666;line-height:1.6"><strong>AND</strong> — All values must be true for the expression to be true.<br>
+    <strong>OR</strong> — At least one value must be true.<br>
+    <strong>XOR</strong> — Exactly one value must be true (at most one).<br>
+    <strong>NOT</strong> — Flips the value: true becomes false, false becomes true.</p>
+  </div>
+  </div><!-- /ref-view-logic -->
+
+</div><!-- /reference -->
+
+<!-- ═══════════════════════════════════════════ -->
+<!--  TAB: AGENDA (1-day course)                 -->
+<!-- ═══════════════════════════════════════════ -->
+<div class="tab-panel" id="agenda">
+  <div class="section-badge">Course Day</div>
+  <h2 class="section-title">The Shape of the Day</h2>
+  <p class="section-desc">A one-day introduction to SHACL. About 4½ hours of instruction, with roughly a third of it (~90 minutes) spent hands-on in this playground. The rhythm is deliberate: ~35 minutes of teaching, then a hands-on, then a debrief — repeated.</p>
+
+  <table class="cheat-table" style="max-width:820px">
+    <thead>
+      <tr><th>Time</th><th>Duration</th><th>Block</th><th>Hands-on</th></tr>
+    </thead>
+    <tbody>
+      <tr><td>09:00 – 09:20</td><td>20 min</td><td>Introduction</td><td>—</td></tr>
+      <tr><td>09:20 – 10:15</td><td>55 min</td><td>Why SHACL <span style="color:#888">(use cases, motivation)</span></td><td>—</td></tr>
+      <tr><td>10:15 – 10:30</td><td>15 min</td><td>☕ Break</td><td>—</td></tr>
+      <tr><td>10:30 – 11:30</td><td>60 min</td><td>Shapes, targets &amp; paths <span style="color:#888">(Ch. 5)</span></td><td><strong>Exercise 1</strong></td></tr>
+      <tr><td>11:30 – 12:30</td><td>60 min</td><td>Core constraints I <span style="color:#888">(§6.1–6.5)</span></td><td><strong>Exercises 2, 3</strong></td></tr>
+      <tr><td>12:30 – 13:30</td><td>60 min</td><td>🍽️ Lunch</td><td>—</td></tr>
+      <tr><td>13:30 – 14:30</td><td>60 min</td><td>Core constraints II <span style="color:#888">(§6.6–6.8)</span> + SHACL engine <span style="color:#888">(Ch. 8)</span></td><td><strong>Exercises 4, 5, 6</strong></td></tr>
+      <tr><td>14:30 – 14:45</td><td>15 min</td><td>☕ Break</td><td>—</td></tr>
+      <tr><td>14:45 – 15:00</td><td>15 min</td><td>Free practice &amp; wrap-up</td><td><strong>Capstone</strong></td></tr>
+    </tbody>
+  </table>
+
+  <div style="padding:1.1rem 1.25rem;background:#fff;border:1px solid #e5e5e5;border-radius:10px;max-width:820px;margin-bottom:1.5rem">
+    <div class="section-badge" style="margin-bottom:.5rem">Exercises · ~90 min hands-on</div>
+    <p style="font-size:.85rem;color:#555;line-height:1.6;margin:0">Six exercises plus a capstone challenge, sequenced to match the teaching blocks. <strong>1</strong> follows Shapes &amp; Targets, <strong>2–3</strong> follow Core Constraints I, <strong>4–5</strong> follow Core Constraints II, and the <strong>Capstone</strong> is for free practice. See the <em>Exercises</em> tab.</p>
+  </div>
+
+  <h3 style="font-size:1.1rem;font-weight:700;margin:.5rem 0 .5rem">What each block does</h3>
+  <div class="exercise-list">
+    <div style="padding:1rem 1.25rem;background:#fff;border:1px solid #e5e5e5;border-radius:10px">
+      <p style="font-size:.85rem;color:#555;line-height:1.65;margin:0"><strong>Introduction + Why SHACL.</strong> Set the scene: OWA vs. CWA, where SHACL fits alongside OWL, the data-pipeline architecture. Use cases and motivation — why validation matters.</p>
+    </div>
+    <div style="padding:1rem 1.25rem;background:#fff;border:1px solid #e5e5e5;border-radius:10px">
+      <p style="font-size:.85rem;color:#555;line-height:1.65;margin:0"><strong>Shapes, targets &amp; paths (Ch. 5).</strong> Node vs. property shapes, target kinds, property-path kinds, and the linking convention. Lord of the Rings as the running example. Then <strong>Exercise 1</strong> — deliberately small, a "does everyone's setup work?" checkpoint.</p>
+    </div>
+    <div style="padding:1rem 1.25rem;background:#fff;border:1px solid #e5e5e5;border-radius:10px">
+      <p style="font-size:.85rem;color:#555;line-height:1.65;margin:0"><strong>Core constraints I (§6.1–6.5).</strong> Value type, cardinality, value range, string-based. Then <strong>Exercises 2 and 3</strong> back-to-back. Exercise 3 is where the Turtle-string escaping gotcha for <code>sh:pattern</code> bites — a good pain point to have in class.</p>
+    </div>
+    <div style="padding:1rem 1.25rem;background:#fff;border:1px solid #e5e5e5;border-radius:10px">
+      <p style="font-size:.85rem;color:#555;line-height:1.65;margin:0"><strong>Core constraints II (§6.6–6.8) + SHACL engine (Ch. 8).</strong> Logical constraints with the truth tables (walk them live — see the <em>Reference → Logic</em> tab), then <code>sh:closed</code>, <code>sh:hasValue</code>, <code>sh:in</code>. Segue into the SHACL engine: validation report structure, result vocabulary, severity levels. <strong>Exercises 4, 5, 6</strong>. (SHACL-SPARQL from Ch. 7 gets a two-minute mention, not a demo.)</p>
+    </div>
+    <div style="padding:1rem 1.25rem;background:#fff;border:1px solid #e5e5e5;border-radius:10px">
+      <p style="font-size:.85rem;color:#555;line-height:1.65;margin:0"><strong>Free practice &amp; wrap-up.</strong> The <strong>Capstone</strong> exercise: bring your own domain, design shapes, read validation reports. This is where SHACL becomes real. Closes with Q&amp;A and pointers for post-course reading.</p>
+    </div>
+  </div>
+
+  <div style="margin-top:.5rem;padding:1rem 1.25rem;background:#fffbeb;border:1px solid #fde68a;border-radius:10px;max-width:820px">
+    <p style="font-size:.83rem;color:#92400e;line-height:1.6;margin:0"><strong>Running long?</strong> Ch. 6 always eats time. If the morning constraints block overruns, drop Exercise 3 and give the ten minutes back to the afternoon. The engine block (Exercise 6) is the one not to squeeze.</p>
+  </div>
+</div><!-- /agenda -->
+
+<!-- ═══════════════════════════════════════════ -->
+<!--  TAB: EXERCISES                            -->
+<!-- ═══════════════════════════════════════════ -->
+<div class="tab-panel" id="exercises">
+
+  <!-- ── OVERVIEW (block picker) ── -->
+  <div id="ex-overview">
+    <div class="section-badge">Exercises</div>
+    <h2 class="section-title">Hands-on Exercises</h2>
+    <p class="section-desc">Pick a block below to start. Each block has exercises, a shapes editor and pre-loaded data to validate your answers against.</p>
+
+    <div class="block-grid">
+      <div class="block-card" onclick="showExBlock('A')">
+        <div class="block-letter">A</div>
+        <h3>Shapes, Targets &amp; Paths</h3>
+        <p>Your first shape — node shapes, target classes, property paths, cardinality and datatype.</p>
+        <div class="block-exercises">Exercise 1 · Ch. 5</div>
+      </div>
+      <div class="block-card" onclick="showExBlock('B')">
+        <div class="block-letter">B</div>
+        <h3>Core Constraints I</h3>
+        <p>Value range, string patterns, the Turtle-escaping gotcha for <code>sh:pattern</code>.</p>
+        <div class="block-exercises">Exercises 2 – 3 · §6.1 – 6.5</div>
+      </div>
+      <div class="block-card" onclick="showExBlock('C')">
+        <div class="block-letter">C</div>
+        <h3>Core Constraints II</h3>
+        <p>Logical constraints (<code>sh:or</code>, <code>sh:xone</code>) and closed shapes.</p>
+        <div class="block-exercises">Exercises 4 – 5 · §6.6 – 6.8</div>
+      </div>
+      <div class="block-card" onclick="showExBlock('D')">
+        <div class="block-letter">D</div>
+        <h3>The SHACL Engine</h3>
+        <p>Read a validation report: focus nodes, result paths, constraint components, severity.</p>
+        <div class="block-exercises">Exercise 6 · Ch. 8</div>
+      </div>
+      <div class="block-card block-capstone" onclick="showExBlock('E')" style="grid-column:1/-1">
+        <div class="block-letter" style="background:#1a1a1a;color:#ffd700">★</div>
+        <h3>Free Practice &amp; Capstone</h3>
+        <p>Combine four or more constraint categories in one shape — or bring your own domain.</p>
+        <div class="block-exercises">Capstone Challenge</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ════════════════════════════════════════ -->
+  <!--  BLOCK A: Shapes, Targets & Paths       -->
+  <!-- ════════════════════════════════════════ -->
+  <div id="ex-block-A" style="display:none">
+    <button class="btn btn-outline btn-small" onclick="showExOverview()" style="margin-bottom:1.5rem">&larr; All Exercises</button>
+    <div class="section-badge">Block A</div>
+    <h2 class="section-title">Shapes, Targets &amp; Paths</h2>
+    <p class="section-desc">Ch. 5</p>
+
+    <div class="exercise-list">
+      <div class="exercise-card" id="ex-1">
+        <div class="exercise-header">
+          
+          <div class="exercise-header-text">
+            <div class="exercise-num">Exercise 1 — First Shape</div>
+            <h4>Target Class, Property Path, Cardinality &amp; Datatype</h4>
+          </div>
+        </div>
+        <div class="exercise-body">
+          <p>Create a node shape <code>rule:Book</code> that targets every instance of <code>ont:Book</code> via <code>sh:targetClass</code>. Give it one property shape on the path <code>ont:mainTitle</code> requiring <strong>exactly one</strong> value, typed as <code>xsd:string</code>.</p>
+          <p style="margin-top:.5rem;font-size:.82rem;color:#888"><strong>Concepts:</strong> <code>sh:NodeShape</code>, <code>sh:targetClass</code>, <code>sh:property</code>, <code>sh:path</code>, <code>sh:datatype</code>, <code>sh:minCount</code>, <code>sh:maxCount</code>.</p>
+          <div class="exercise-solution" id="ex-1-solution">
+            <div class="exercise-solution-header">Reference Solution</div>
+            <div class="exercise-solution-wrap">
+              <textarea class="exercise-sol-cm" id="ex-1-sol">rule:Book a sh:NodeShape ;
+  sh:targetClass ont:Book ;
+  sh:property [
+    sh:path ont:mainTitle ;
+    sh:datatype xsd:string ;
+    sh:minCount 1 ;
+    sh:maxCount 1 ;
+  ] .</textarea>
+            </div>
+          </div>
+          <div class="btn-row" style="margin-top:.75rem;margin-bottom:0">
+            <button class="btn btn-outline btn-small" onclick="event.stopPropagation();showSolution('ex-1')">Show Solution</button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <h3 style="font-size:1rem;font-weight:700;margin:2rem 0 .75rem">Try it — write your shapes and validate</h3>
+    <p style="font-size:.85rem;color:#666;margin-bottom:1rem">Write your shape in the <strong>Shapes Graph</strong>. The data graph has test data: one valid book, one with no title, and one with a non-string title. A correct shape should produce two violations.</p>
+    <div class="playground-grid">
+      <div class="pane">
+        <div class="pane-header"><h3>Shapes Graph</h3><div class="dot"></div></div>
+        <textarea id="block-A-shapes">@prefix sh:   <http://www.w3.org/ns/shacl#> .
+@prefix xsd:  <http://www.w3.org/2001/XMLSchema#> .
+@prefix rdf:  <http://www.w3.org/1999/02/22-rdf-syntax-ns#> .
+@prefix ex:   <http://data.veronahe.no/> .
+@prefix ont:  <http://ontology.veronahe.no/> .
+@prefix rule: <http://shapes.veronahe.no/> .
+
+# Write your rule:Book shape here
+</textarea>
+      </div>
+      <div class="pane">
+        <div class="pane-header"><h3>Data Graph</h3><div class="dot" style="background:#16a34a"></div></div>
+        <textarea id="block-A-data">@prefix rdf:  <http://www.w3.org/1999/02/22-rdf-syntax-ns#> .
+@prefix xsd:  <http://www.w3.org/2001/XMLSchema#> .
+@prefix ex:   <http://data.veronahe.no/> .
+@prefix ont:  <http://ontology.veronahe.no/> .
+
+# ── Conforming ───────────────────────
+ex:TheHobbit a ont:Book ;
+  ont:mainTitle "The Hobbit" .
+
+# ── Violation: no title at all ───────
+ex:MysteryBook a ont:Book .
+
+# ── Violation: title is an integer ───
+ex:BadBook a ont:Book ;
+  ont:mainTitle 42 .
+</textarea>
+      </div>
+    </div>
+    <div class="btn-row">
+      <button class="btn btn-dark" onclick="runBlockValidation('A')">Validate</button>
+      <button class="btn btn-outline" onclick="clearBlockOutput('A')">Clear Output</button>
+    </div>
+    <div class="pane pane-output" style="margin-bottom:2rem">
+      <div class="pane-header"><h3>Validation Output</h3></div>
+      <textarea id="block-A-output"># Write your shape above, then click Validate.</textarea>
+    </div>
+  </div>
+
+  <!-- ════════════════════════════════════════ -->
+  <!--  BLOCK B: Core Constraints I             -->
+  <!-- ════════════════════════════════════════ -->
+  <div id="ex-block-B" style="display:none">
+    <button class="btn btn-outline btn-small" onclick="showExOverview()" style="margin-bottom:1.5rem">&larr; All Exercises</button>
+    <div class="section-badge">Block B</div>
+    <h2 class="section-title">Core Constraints I</h2>
+    <p class="section-desc">§6.1 – 6.5</p>
+
+    <div class="exercise-list">
+      <div class="exercise-card" id="ex-2">
+        <div class="exercise-header">
+          
+          <div class="exercise-header-text">
+            <div class="exercise-num">Exercise 2 — Value Type &amp; Range</div>
+            <h4>Age Constraints</h4>
+          </div>
+        </div>
+        <div class="exercise-body">
+          <p>Create a shape <code>rule:Person</code> targeting <code>ont:Person</code> with a property shape on <code>ont:age</code>: it must be an <code>xsd:integer</code>, at least <code>0</code> (<code>sh:minInclusive</code>) and at most <code>150</code> (<code>sh:maxInclusive</code>).</p>
+          <p style="margin-top:.5rem;font-size:.82rem;color:#888"><strong>Concepts:</strong> <code>sh:datatype</code>, <code>sh:minInclusive</code>, <code>sh:maxInclusive</code>.</p>
+          <div class="exercise-solution" id="ex-2-solution">
+            <div class="exercise-solution-header">Reference Solution</div>
+            <div class="exercise-solution-wrap">
+              <textarea class="exercise-sol-cm" id="ex-2-sol">rule:Person a sh:NodeShape ;
+  sh:targetClass ont:Person ;
+  sh:property [
+    sh:path ont:age ;
+    sh:datatype xsd:integer ;
+    sh:minInclusive 0 ;
+    sh:maxInclusive 150 ;
+  ] .</textarea>
+            </div>
+          </div>
+          <div class="btn-row" style="margin-top:.75rem;margin-bottom:0">
+            <button class="btn btn-outline btn-small" onclick="event.stopPropagation();showSolution('ex-2')">Show Solution</button>
+          </div>
+        </div>
+      </div>
+
+      <div class="exercise-card" id="ex-3">
+        <div class="exercise-header">
+          
+          <div class="exercise-header-text">
+            <div class="exercise-num">Exercise 3 — String Constraints</div>
+            <h4>Email Pattern (watch the escaping!)</h4>
+          </div>
+        </div>
+        <div class="exercise-body">
+          <p>Add a property shape on <code>ont:email</code> that requires the value to look like an email address using <code>sh:pattern</code>. Remember: a backslash inside a Turtle string must be <strong>doubled</strong>, so <code>\s</code> becomes <code>\\s</code>. Add <code>sh:flags "i"</code> for case-insensitive matching.</p>
+          <p style="margin-top:.5rem;font-size:.82rem;color:#888"><strong>Concepts:</strong> <code>sh:pattern</code>, <code>sh:flags</code>. Also try: <code>sh:minLength</code>, <code>sh:maxLength</code>.</p>
+          <div class="exercise-solution" id="ex-3-solution">
+            <div class="exercise-solution-header">Reference Solution</div>
+            <div class="exercise-solution-wrap">
+              <textarea class="exercise-sol-cm" id="ex-3-sol">rule:Person a sh:NodeShape ;
+  sh:targetClass ont:Person ;
+  sh:property [
+    sh:path ont:email ;
+    sh:pattern "^[^@\\s]+@[^@\\s]+\\.[^@\\s]+$" ;
+    sh:flags "i" ;
+  ] .
+
+# Note the DOUBLED backslashes: \\s and \\.
+# A single backslash is a Turtle escape.</textarea>
+            </div>
+          </div>
+          <div class="btn-row" style="margin-top:.75rem;margin-bottom:0">
+            <button class="btn btn-outline btn-small" onclick="event.stopPropagation();showSolution('ex-3')">Show Solution</button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <h3 style="font-size:1rem;font-weight:700;margin:2rem 0 .75rem">Try it — write your shapes and validate</h3>
+    <p style="font-size:.85rem;color:#666;margin-bottom:1rem">Write <strong>both</strong> your Person shape (age + email constraints) in the shapes graph. The data has conforming and violating persons — a correct pair of shapes should flag the violations.</p>
+    <div class="playground-grid">
+      <div class="pane">
+        <div class="pane-header"><h3>Shapes Graph</h3><div class="dot"></div></div>
+        <textarea id="block-B-shapes">@prefix sh:   <http://www.w3.org/ns/shacl#> .
+@prefix xsd:  <http://www.w3.org/2001/XMLSchema#> .
+@prefix rdf:  <http://www.w3.org/1999/02/22-rdf-syntax-ns#> .
+@prefix ex:   <http://data.veronahe.no/> .
+@prefix ont:  <http://ontology.veronahe.no/> .
+@prefix rule: <http://shapes.veronahe.no/> .
+
+# Write your rule:Person shape here
+# (age range + email pattern)
+</textarea>
+      </div>
+      <div class="pane">
+        <div class="pane-header"><h3>Data Graph</h3><div class="dot" style="background:#16a34a"></div></div>
+        <textarea id="block-B-data">@prefix rdf:  <http://www.w3.org/1999/02/22-rdf-syntax-ns#> .
+@prefix xsd:  <http://www.w3.org/2001/XMLSchema#> .
+@prefix ex:   <http://data.veronahe.no/> .
+@prefix ont:  <http://ontology.veronahe.no/> .
+
+# ── Conforming ───────────────────────
+ex:Bilbo a ont:Person ;
+  ont:age 111 ;
+  ont:email "bilbo@shire.example" .
+
+# ── Violation: age out of range ──────
+ex:Elrond a ont:Person ;
+  ont:age 6000 .
+
+# ── Violation: bad email ─────────────
+ex:Gollum a ont:Person ;
+  ont:age 589 ;
+  ont:email "my precious" .
+
+# ── Violation: age is a string ───────
+ex:Frodo a ont:Person ;
+  ont:age "fifty" .
+</textarea>
+      </div>
+    </div>
+    <div class="btn-row">
+      <button class="btn btn-dark" onclick="runBlockValidation('B')">Validate</button>
+      <button class="btn btn-outline" onclick="clearBlockOutput('B')">Clear Output</button>
+    </div>
+    <div class="pane pane-output" style="margin-bottom:2rem">
+      <div class="pane-header"><h3>Validation Output</h3></div>
+      <textarea id="block-B-output"># Write your shapes above, then click Validate.</textarea>
+    </div>
+  </div>
+
+  <!-- ════════════════════════════════════════ -->
+  <!--  BLOCK C: Core Constraints II            -->
+  <!-- ════════════════════════════════════════ -->
+  <div id="ex-block-C" style="display:none">
+    <button class="btn btn-outline btn-small" onclick="showExOverview()" style="margin-bottom:1.5rem">&larr; All Exercises</button>
+    <div class="section-badge">Block C</div>
+    <h2 class="section-title">Core Constraints II</h2>
+    <p class="section-desc">§6.6 – 6.8</p>
+
+    <div class="exercise-list">
+      <div class="exercise-card" id="ex-4">
+        <div class="exercise-header">
+          
+          <div class="exercise-header-text">
+            <div class="exercise-num">Exercise 4 — Logical Constraints</div>
+            <h4>sh:or (and how it differs from sh:xone)</h4>
+          </div>
+        </div>
+        <div class="exercise-body">
+          <p>Every <code>ont:Person</code> must record their birth in <em>at least one</em> way: a full <code>ont:birthDate</code> (<code>xsd:date</code>) <strong>or</strong> just a <code>ont:birthYear</code> (<code>xsd:gYear</code>). Model this with <code>sh:or</code>. Bonus: swap for <code>sh:xone</code> — what changes for a person who has both?</p>
+          <p style="margin-top:.5rem;font-size:.82rem;color:#888"><strong>Concepts:</strong> <code>sh:or</code>, <code>sh:xone</code>. See also the truth tables in <em>Reference → Logic</em>.</p>
+          <div class="exercise-solution" id="ex-4-solution">
+            <div class="exercise-solution-header">Reference Solution</div>
+            <div class="exercise-solution-wrap">
+              <textarea class="exercise-sol-cm" id="ex-4-sol">rule:Person a sh:NodeShape ;
+  sh:targetClass ont:Person ;
+  sh:or (
+    [ sh:path ont:birthDate ; sh:datatype xsd:date ;  sh:minCount 1 ]
+    [ sh:path ont:birthYear ; sh:datatype xsd:gYear ; sh:minCount 1 ]
+  ) .
+
+# sh:or   -> at least one branch (both OK)
+# sh:xone -> exactly one branch  (both -> violation)</textarea>
+            </div>
+          </div>
+          <div class="btn-row" style="margin-top:.75rem;margin-bottom:0">
+            <button class="btn btn-outline btn-small" onclick="event.stopPropagation();showSolution('ex-4')">Show Solution</button>
+          </div>
+        </div>
+      </div>
+
+      <div class="exercise-card" id="ex-5">
+        <div class="exercise-header">
+          
+          <div class="exercise-header-text">
+            <div class="exercise-num">Exercise 5 — Closed Shapes</div>
+            <h4>sh:closed &amp; sh:ignoredProperties</h4>
+          </div>
+        </div>
+        <div class="exercise-body">
+          <p>Lock down <code>rule:Book</code> so that <em>only</em> declared properties are allowed. Set <code>sh:closed true</code>, declare shapes for <code>ont:mainTitle</code> and <code>ont:author</code>, and use <code>sh:ignoredProperties ( rdf:type )</code>. An undeclared <code>ont:colour</code> should violate.</p>
+          <p style="margin-top:.5rem;font-size:.82rem;color:#888"><strong>Concepts:</strong> <code>sh:closed</code>, <code>sh:ignoredProperties</code>. The CWA-like constraint.</p>
+          <div class="exercise-solution" id="ex-5-solution">
+            <div class="exercise-solution-header">Reference Solution</div>
+            <div class="exercise-solution-wrap">
+              <textarea class="exercise-sol-cm" id="ex-5-sol">rule:Book a sh:NodeShape ;
+  sh:targetClass ont:Book ;
+  sh:closed true ;
+  sh:ignoredProperties ( rdf:type ) ;
+  sh:property [ sh:path ont:mainTitle ; sh:minCount 1 ] ;
+  sh:property [ sh:path ont:author ;    sh:minCount 1 ] .</textarea>
+            </div>
+          </div>
+          <div class="btn-row" style="margin-top:.75rem;margin-bottom:0">
+            <button class="btn btn-outline btn-small" onclick="event.stopPropagation();showSolution('ex-5')">Show Solution</button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <h3 style="font-size:1rem;font-weight:700;margin:2rem 0 .75rem">Try it — write your shapes and validate</h3>
+    <p style="font-size:.85rem;color:#666;margin-bottom:1rem">Write <strong>both</strong> shapes: a Person shape with <code>sh:or</code> (birth date/year) and a closed Book shape. The test data has both conforming and violating instances.</p>
+    <div class="playground-grid">
+      <div class="pane">
+        <div class="pane-header"><h3>Shapes Graph</h3><div class="dot"></div></div>
+        <textarea id="block-C-shapes">@prefix sh:   <http://www.w3.org/ns/shacl#> .
+@prefix xsd:  <http://www.w3.org/2001/XMLSchema#> .
+@prefix rdf:  <http://www.w3.org/1999/02/22-rdf-syntax-ns#> .
+@prefix ex:   <http://data.veronahe.no/> .
+@prefix ont:  <http://ontology.veronahe.no/> .
+@prefix rule: <http://shapes.veronahe.no/> .
+
+# Exercise 4: rule:Person with sh:or
+# (birthDate OR birthYear required)
+
+
+# Exercise 5: rule:Book with sh:closed
+# (only mainTitle + author allowed)
+</textarea>
+      </div>
+      <div class="pane">
+        <div class="pane-header"><h3>Data Graph</h3><div class="dot" style="background:#16a34a"></div></div>
+        <textarea id="block-C-data">@prefix rdf:  <http://www.w3.org/1999/02/22-rdf-syntax-ns#> .
+@prefix xsd:  <http://www.w3.org/2001/XMLSchema#> .
+@prefix ex:   <http://data.veronahe.no/> .
+@prefix ont:  <http://ontology.veronahe.no/> .
+
+# ── Conforming Person (year only) ────
+ex:JRRTolkien a ont:Person ;
+  ont:birthYear "1892"^^xsd:gYear .
+
+# ── Violation: no birth info at all ──
+ex:Nobody a ont:Person .
+
+# ── Conforming Book ──────────────────
+ex:TheHobbit a ont:Book ;
+  ont:mainTitle "The Hobbit" ;
+  ont:author ex:JRRTolkien .
+
+# ── Violation: undeclared property ───
+ex:BadBook a ont:Book ;
+  ont:mainTitle "A Book" ;
+  ont:author ex:JRRTolkien ;
+  ont:colour "green" .
+</textarea>
+      </div>
+    </div>
+    <div class="btn-row">
+      <button class="btn btn-dark" onclick="runBlockValidation('C')">Validate</button>
+      <button class="btn btn-outline" onclick="clearBlockOutput('C')">Clear Output</button>
+    </div>
+    <div class="pane pane-output" style="margin-bottom:2rem">
+      <div class="pane-header"><h3>Validation Output</h3></div>
+      <textarea id="block-C-output"># Write your shapes above, then click Validate.</textarea>
+    </div>
+  </div>
+
+  <!-- ════════════════════════════════════════ -->
+  <!--  BLOCK D: The SHACL Engine               -->
+  <!-- ════════════════════════════════════════ -->
+  <div id="ex-block-D" style="display:none">
+    <button class="btn btn-outline btn-small" onclick="showExOverview()" style="margin-bottom:1.5rem">&larr; All Exercises</button>
+    <div class="section-badge">Block D</div>
+    <h2 class="section-title">The SHACL Engine</h2>
+    <p class="section-desc">Ch. 8</p>
+
+    <div class="exercise-list">
+      <div class="exercise-card" id="ex-6">
+        <div class="exercise-header">
+          
+          <div class="exercise-header-text">
+            <div class="exercise-num">Exercise 6 — Reading a Validation Report</div>
+            <h4>Focus Node, Result Path, Source Constraint Component</h4>
+          </div>
+        </div>
+        <div class="exercise-body">
+          <p>The editor below is pre-loaded with shapes <em>and</em> intentionally broken data. Hit <strong>Validate</strong> and read the report. Answer: (1) How many <code>sh:ValidationResult</code>s? (2) For each, what is the <code>sh:focusNode</code>, <code>sh:resultPath</code>, and <code>sh:sourceConstraintComponent</code>? (3) What <code>sh:resultSeverity</code> is used?</p>
+          <div class="exercise-solution" id="ex-6-solution">
+            <div class="exercise-solution-header">Reference Answer</div>
+            <div class="exercise-solution-wrap">
+              <textarea class="exercise-sol-cm" id="ex-6-sol"># You should see 3 results:
+#
+# 1. ex:TwoTowers   → ont:mainTitle
+#    sh:MaxCountConstraintComponent
+#    (two titles, max is 1)
+#
+# 2. ex:Silmarillion → ont:author
+#    sh:MinCountConstraintComponent
+#    (no author, min is 1)
+#
+# 3. ex:TheHobbit   → ont:isbn
+#    sh:PatternConstraintComponent
+#    ("not-an-isbn" doesn't match the regex)
+#
+# All three: sh:resultSeverity sh:Violation
+#
+# Key vocabulary:
+#   sh:ValidationReport
+#     sh:conforms  true/false
+#     sh:result → sh:ValidationResult
+#       sh:focusNode
+#       sh:resultPath
+#       sh:value
+#       sh:sourceConstraintComponent
+#       sh:sourceShape
+#       sh:resultSeverity</textarea>
+            </div>
+          </div>
+          <div class="btn-row" style="margin-top:.75rem;margin-bottom:0">
+            <button class="btn btn-outline btn-small" onclick="event.stopPropagation();showSolution('ex-6')">Show Answer</button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <h3 style="font-size:1rem;font-weight:700;margin:2rem 0 .75rem">Pre-loaded: shapes + broken data</h3>
+    <p style="font-size:.85rem;color:#666;margin-bottom:1rem">Just hit Validate and study the report. The data has three deliberate violations for you to find.</p>
+    <div class="playground-grid">
+      <div class="pane">
+        <div class="pane-header"><h3>Shapes Graph</h3><div class="dot"></div></div>
+        <textarea id="block-D-shapes">@prefix sh:   <http://www.w3.org/ns/shacl#> .
+@prefix xsd:  <http://www.w3.org/2001/XMLSchema#> .
+@prefix rdf:  <http://www.w3.org/1999/02/22-rdf-syntax-ns#> .
+@prefix foaf: <http://xmlns.com/foaf/0.1/> .
+@prefix ex:   <http://data.veronahe.no/> .
+@prefix ont:  <http://ontology.veronahe.no/> .
+@prefix rule: <http://shapes.veronahe.no/> .
+
+rule:Book a sh:NodeShape ;
+  sh:targetClass ont:Book ;
+  sh:property [
+    sh:path ont:mainTitle ;
+    sh:datatype xsd:string ;
+    sh:minCount 1 ;
+    sh:maxCount 1 ;
+  ] ;
+  sh:property [
+    sh:path ont:author ;
+    sh:nodeKind sh:IRI ;
+    sh:minCount 1 ;
+  ] ;
+  sh:property [
+    sh:path ont:isbn ;
+    sh:pattern "^(\\d{9}[\\dX]|\\d{13})$" ;
+  ] .
+</textarea>
+      </div>
+      <div class="pane">
+        <div class="pane-header"><h3>Data Graph</h3><div class="dot" style="background:#dc2626"></div></div>
+        <textarea id="block-D-data">@prefix rdf:  <http://www.w3.org/1999/02/22-rdf-syntax-ns#> .
+@prefix xsd:  <http://www.w3.org/2001/XMLSchema#> .
+@prefix foaf: <http://xmlns.com/foaf/0.1/> .
+@prefix ex:   <http://data.veronahe.no/> .
+@prefix ont:  <http://ontology.veronahe.no/> .
+
+# ── 3 violations hidden below ────────
+
+ex:TwoTowers a ont:Book ;
+  ont:mainTitle "The Two Towers" ;
+  ont:mainTitle "De to tårn" ;
+  ont:author ex:JRRTolkien .
+
+ex:Silmarillion a ont:Book ;
+  ont:mainTitle "The Silmarillion" .
+
+ex:TheHobbit a ont:Book ;
+  ont:mainTitle "The Hobbit" ;
+  ont:author ex:JRRTolkien ;
+  ont:isbn "not-an-isbn" .
+
+ex:JRRTolkien a foaf:Person .
+</textarea>
+      </div>
+    </div>
+    <div class="btn-row">
+      <button class="btn btn-dark" onclick="runBlockValidation('D')">Validate</button>
+      <button class="btn btn-outline" onclick="clearBlockOutput('D')">Clear Output</button>
+    </div>
+    <div class="pane pane-output" style="margin-bottom:2rem">
+      <div class="pane-header"><h3>Validation Output</h3></div>
+      <textarea id="block-D-output"># Click Validate to see the report.</textarea>
+    </div>
+  </div>
+
+  <!-- ════════════════════════════════════════ -->
+  <!--  BLOCK E: Capstone                       -->
+  <!-- ════════════════════════════════════════ -->
+  <div id="ex-block-E" style="display:none">
+    <button class="btn btn-outline btn-small" onclick="showExOverview()" style="margin-bottom:1.5rem">&larr; All Exercises</button>
+    <div class="section-badge" style="background:#1a1a1a;color:#ffd700">Capstone</div>
+    <h2 class="section-title">Free Practice &amp; Capstone</h2>
+    <p class="section-desc">Combine everything</p>
+
+    <div class="exercise-list">
+      <div class="exercise-card" id="ex-capstone" style="border-color:#ffd700;border-width:2px">
+        <div class="exercise-header">
+          
+          <div class="exercise-header-text">
+            <div class="exercise-num">Capstone — Combined Constraints</div>
+            <h4>Bring It All Together</h4>
+          </div>
+        </div>
+        <div class="exercise-body">
+          <p>Design one complete <code>rule:Book</code> shape using constraints from <strong>at least four</strong> categories: cardinality + datatype on <code>ont:mainTitle</code>, a value-type rule on <code>ont:author</code>, a string rule (<code>sh:pattern</code>) on <code>ont:isbn</code>, a logical rule (<code>sh:or</code>), and optionally <code>sh:closed</code>.</p>
+          <p style="margin-top:.5rem;font-size:.82rem;color:#888"><strong>Or:</strong> bring your own domain! Movies, recipes, employees, sensors — model shapes and validate real data.</p>
+          <div class="exercise-solution" id="ex-capstone-solution">
+            <div class="exercise-solution-header">Reference Solution</div>
+            <div class="exercise-solution-wrap">
+              <textarea class="exercise-sol-cm" id="ex-capstone-sol">rule:Book a sh:NodeShape ;
+  sh:targetClass ont:Book ;
+  sh:closed true ;
+  sh:ignoredProperties ( rdf:type ) ;
+  sh:property rule:Book-mainTitle ;
+  sh:property rule:Book-author ;
+  sh:property rule:Book-isbn ;
+  sh:property rule:Book-published .
+
+rule:Book-mainTitle a sh:PropertyShape ;
+  sh:path ont:mainTitle ;
+  sh:datatype xsd:string ;
+  sh:minCount 1 ; sh:maxCount 1 .
+
+rule:Book-author a sh:PropertyShape ;
+  sh:path ont:author ;
+  sh:nodeKind sh:IRI ;
+  sh:class foaf:Person ;
+  sh:minCount 1 .
+
+rule:Book-isbn a sh:PropertyShape ;
+  sh:path ont:isbn ;
+  sh:pattern "^(?:\\d{9}[\\dX]|\\d{13})$" .
+
+rule:Book-published a sh:PropertyShape ;
+  sh:path ont:published ;
+  sh:minCount 1 ;
+  sh:or (
+    [ sh:datatype xsd:date ]
+    [ sh:datatype xsd:gYear ]
+  ) .</textarea>
+            </div>
+          </div>
+          <div class="btn-row" style="margin-top:.75rem;margin-bottom:0">
+            <button class="btn btn-outline btn-small" onclick="event.stopPropagation();showSolution('ex-capstone')">Show Solution</button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <h3 style="font-size:1rem;font-weight:700;margin:2rem 0 .75rem">Your playground</h3>
+    <p style="font-size:.85rem;color:#666;margin-bottom:1rem">Write your shapes on the left. The data graph has test books — some conforming, some violating multiple constraints at once. Or clear it and bring your own domain.</p>
+    <div class="playground-grid">
+      <div class="pane">
+        <div class="pane-header"><h3>Shapes Graph</h3><div class="dot"></div></div>
+        <textarea id="block-E-shapes">@prefix sh:   <http://www.w3.org/ns/shacl#> .
+@prefix xsd:  <http://www.w3.org/2001/XMLSchema#> .
+@prefix foaf: <http://xmlns.com/foaf/0.1/> .
+@prefix rdf:  <http://www.w3.org/1999/02/22-rdf-syntax-ns#> .
+@prefix ex:   <http://data.veronahe.no/> .
+@prefix ont:  <http://ontology.veronahe.no/> .
+@prefix rule: <http://shapes.veronahe.no/> .
+
+# Build your capstone shape here
+# (or model your own domain!)
+</textarea>
+      </div>
+      <div class="pane">
+        <div class="pane-header"><h3>Data Graph</h3><div class="dot" style="background:#16a34a"></div></div>
+        <textarea id="block-E-data">@prefix rdf:  <http://www.w3.org/1999/02/22-rdf-syntax-ns#> .
+@prefix xsd:  <http://www.w3.org/2001/XMLSchema#> .
+@prefix foaf: <http://xmlns.com/foaf/0.1/> .
+@prefix ex:   <http://data.veronahe.no/> .
+@prefix ont:  <http://ontology.veronahe.no/> .
+
+# ── Conforming ───────────────────────
+ex:TheHobbit a ont:Book ;
+  ont:mainTitle "The Hobbit" ;
+  ont:author ex:JRRTolkien ;
+  ont:isbn "9780345339683" ;
+  ont:published "1937"^^xsd:gYear .
+ex:JRRTolkien a foaf:Person .
+
+# ── Violations ───────────────────────
+ex:BadBook a ont:Book ;
+  ont:mainTitle 42 ;
+  ont:isbn "not-valid" ;
+  ont:published "sometime" .
+</textarea>
+      </div>
+    </div>
+    <div class="btn-row">
+      <button class="btn btn-dark" onclick="runBlockValidation('E')">Validate</button>
+      <button class="btn btn-outline" onclick="clearBlockOutput('E')">Clear Output</button>
+    </div>
+    <div class="pane pane-output" style="margin-bottom:2rem">
+      <div class="pane-header"><h3>Validation Output</h3></div>
+      <textarea id="block-E-output"># Write your capstone shape, then Validate.</textarea>
+    </div>
+  </div>
+
+</div>
+
+<!-- ═══════════════════════════════════════════ -->
+<!--  TAB: QUIZ                                  -->
+<!-- ═══════════════════════════════════════════ -->
+<div class="tab-panel" id="quiz">
+  <div class="section-badge">Assessment</div>
+  <h2 class="section-title">SHACL Course Quiz</h2>
+  <p class="section-desc">Test your knowledge of the full SHACL curriculum. Score 80% or higher to earn your completion badge. Choose the best answer for each question.</p>
+
+  <div class="quiz-controls">
+    <div class="quiz-progress">Score: <strong id="quiz-score">0</strong> / <strong id="quiz-total">20</strong></div>
+    <div class="quiz-score-bar"><div class="quiz-score-fill" id="quiz-bar" style="width:0%"></div></div>
+  </div>
+
+  <div id="quiz-questions">
+
+    <!-- Q1 — Ch.1: The Semantic Web -->
+    <div class="quiz-question" data-correct="c">
+      <div class="quiz-q-num">Question 1 — The Semantic Web</div>
+      <div class="quiz-q-text">Which organisation standardises the core Semantic Web technologies (RDF, OWL, SPARQL, SHACL)?</div>
+      <ul class="quiz-options">
+        <li class="quiz-opt" data-val="a"><input type="radio" name="q1" value="a"/> IEEE</li>
+        <li class="quiz-opt" data-val="b"><input type="radio" name="q1" value="b"/> ISO</li>
+        <li class="quiz-opt" data-val="c"><input type="radio" name="q1" value="c"/> W3C</li>
+        <li class="quiz-opt" data-val="d"><input type="radio" name="q1" value="d"/> IETF</li>
+      </ul>
+      <div class="quiz-explanation">The World Wide Web Consortium (W3C) is responsible for standardising the Semantic Web stack, including RDF, RDFS, OWL, SPARQL, and SHACL.</div>
+    </div>
+
+    <!-- Q2 — Ch.2: Logic & Set Theory -->
+    <div class="quiz-question" data-correct="b">
+      <div class="quiz-q-num">Question 2 — Logic &amp; Set Theory</div>
+      <div class="quiz-q-text">In set theory notation, what does the symbol <code>&isin;</code> mean?</div>
+      <ul class="quiz-options">
+        <li class="quiz-opt" data-val="a"><input type="radio" name="q2" value="a"/> A is a subset of B</li>
+        <li class="quiz-opt" data-val="b"><input type="radio" name="q2" value="b"/> a is a member (element) of set B</li>
+        <li class="quiz-opt" data-val="c"><input type="radio" name="q2" value="c"/> A intersects with B</li>
+        <li class="quiz-opt" data-val="d"><input type="radio" name="q2" value="d"/> A is the complement of B</li>
+      </ul>
+      <div class="quiz-explanation">The symbol <code>&isin;</code> denotes set membership — it reads "a is an element of B". Subset uses <code>&sube;</code>, intersection uses <code>&cap;</code>.</div>
+    </div>
+
+    <!-- Q3 — Ch.2: Knowledge Hierarchy -->
+    <div class="quiz-question" data-correct="d">
+      <div class="quiz-q-num">Question 3 — Knowledge Hierarchy</div>
+      <div class="quiz-q-text">What is the correct order in the knowledge hierarchy, from most basic to most advanced?</div>
+      <ul class="quiz-options">
+        <li class="quiz-opt" data-val="a"><input type="radio" name="q3" value="a"/> Information &rarr; Data &rarr; Knowledge &rarr; Insight &rarr; Wisdom</li>
+        <li class="quiz-opt" data-val="b"><input type="radio" name="q3" value="b"/> Data &rarr; Knowledge &rarr; Information &rarr; Wisdom &rarr; Insight</li>
+        <li class="quiz-opt" data-val="c"><input type="radio" name="q3" value="c"/> Data &rarr; Information &rarr; Insight &rarr; Knowledge &rarr; Wisdom</li>
+        <li class="quiz-opt" data-val="d"><input type="radio" name="q3" value="d"/> Data &rarr; Information &rarr; Knowledge &rarr; Insight &rarr; Wisdom</li>
+      </ul>
+      <div class="quiz-explanation">The classic knowledge hierarchy runs: Data &rarr; Information &rarr; Knowledge &rarr; Insight &rarr; Wisdom, each level building on the previous with added context and understanding.</div>
+    </div>
+
+    <!-- Q4 — Ch.3: RDF Triples -->
+    <div class="quiz-question" data-correct="a">
+      <div class="quiz-q-num">Question 4 — RDF Fundamentals</div>
+      <div class="quiz-q-text">In the RDF triple <code>ex:Solaris ex:author ex:Lem .</code>, what role does <code>ex:author</code> play?</div>
+      <ul class="quiz-options">
+        <li class="quiz-opt" data-val="a"><input type="radio" name="q4" value="a"/> Predicate</li>
+        <li class="quiz-opt" data-val="b"><input type="radio" name="q4" value="b"/> Subject</li>
+        <li class="quiz-opt" data-val="c"><input type="radio" name="q4" value="c"/> Object</li>
+        <li class="quiz-opt" data-val="d"><input type="radio" name="q4" value="d"/> Namespace</li>
+      </ul>
+      <div class="quiz-explanation">An RDF triple has the structure: subject &ndash; predicate &ndash; object. <code>ex:author</code> sits in the middle, making it the predicate (the relationship between subject and object).</div>
+    </div>
+
+    <!-- Q5 — Ch.3: Turtle Syntax -->
+    <div class="quiz-question" data-correct="c">
+      <div class="quiz-q-num">Question 5 — Turtle Syntax</div>
+      <div class="quiz-q-text">In Turtle syntax, what does the semicolon (<code>;</code>) do?</div>
+      <ul class="quiz-options">
+        <li class="quiz-opt" data-val="a"><input type="radio" name="q5" value="a"/> Terminates a triple</li>
+        <li class="quiz-opt" data-val="b"><input type="radio" name="q5" value="b"/> Separates multiple objects sharing the same subject and predicate</li>
+        <li class="quiz-opt" data-val="c"><input type="radio" name="q5" value="c"/> Continues with a new predicate-object pair for the same subject</li>
+        <li class="quiz-opt" data-val="d"><input type="radio" name="q5" value="d"/> Starts a comment</li>
+      </ul>
+      <div class="quiz-explanation">The semicolon lets you add another predicate-object pair to the same subject. The comma (<code>,</code>) adds another object sharing the same subject and predicate. The dot (<code>.</code>) terminates a statement.</div>
+    </div>
+
+    <!-- Q6 — Ch.3: Domain and Range -->
+    <div class="quiz-question" data-correct="b">
+      <div class="quiz-q-num">Question 6 — RDFS Inference</div>
+      <div class="quiz-q-text">Given <code>ex:author rdfs:range ex:Person</code> and <code>ex:Hobbit ex:author ex:Tolkien</code>, what does a reasoner infer?</div>
+      <ul class="quiz-options">
+        <li class="quiz-opt" data-val="a"><input type="radio" name="q6" value="a"/> <code>ex:Hobbit</code> is of type <code>ex:Person</code></li>
+        <li class="quiz-opt" data-val="b"><input type="radio" name="q6" value="b"/> <code>ex:Tolkien</code> is of type <code>ex:Person</code></li>
+        <li class="quiz-opt" data-val="c"><input type="radio" name="q6" value="c"/> <code>ex:Hobbit</code> is of type <code>ex:Author</code></li>
+        <li class="quiz-opt" data-val="d"><input type="radio" name="q6" value="d"/> The data is invalid and rejected</li>
+      </ul>
+      <div class="quiz-explanation"><code>rdfs:range</code> means the object of the property is inferred to be of the given type. So the reasoner infers <code>ex:Tolkien a ex:Person</code>. Domain/range is for inference, not validation.</div>
+    </div>
+
+    <!-- Q7 — Ch.3: Open World Assumption -->
+    <div class="quiz-question" data-correct="a">
+      <div class="quiz-q-num">Question 7 — Open vs. Closed World</div>
+      <div class="quiz-q-text">Under the Open World Assumption (OWA), if a fact is not stated in the data, what is its truth value?</div>
+      <ul class="quiz-options">
+        <li class="quiz-opt" data-val="a"><input type="radio" name="q7" value="a"/> Unknown — it might be true or false</li>
+        <li class="quiz-opt" data-val="b"><input type="radio" name="q7" value="b"/> False</li>
+        <li class="quiz-opt" data-val="c"><input type="radio" name="q7" value="c"/> True by default</li>
+        <li class="quiz-opt" data-val="d"><input type="radio" name="q7" value="d"/> An error is raised</li>
+      </ul>
+      <div class="quiz-explanation">OWA (used by OWL/RDF) treats missing information as unknown — absence of evidence is not evidence of absence. The Closed World Assumption (used by SHACL and databases) treats missing information as false.</div>
+    </div>
+
+    <!-- Q8 — Ch.4: OWL vs SHACL -->
+    <div class="quiz-question" data-correct="d">
+      <div class="quiz-q-num">Question 8 — OWL vs. SHACL</div>
+      <div class="quiz-q-text">Which statement best describes the relationship between OWL and SHACL?</div>
+      <ul class="quiz-options">
+        <li class="quiz-opt" data-val="a"><input type="radio" name="q8" value="a"/> SHACL is designed to replace OWL</li>
+        <li class="quiz-opt" data-val="b"><input type="radio" name="q8" value="b"/> OWL is for validation, SHACL is for reasoning</li>
+        <li class="quiz-opt" data-val="c"><input type="radio" name="q8" value="c"/> They do exactly the same thing in different syntax</li>
+        <li class="quiz-opt" data-val="d"><input type="radio" name="q8" value="d"/> OWL is for reasoning/inference, SHACL is for validation — they are complementary</li>
+      </ul>
+      <div class="quiz-explanation">OWL and SHACL serve different purposes. OWL reasons over data and infers new facts (Open World). SHACL validates data against constraints (Closed World). A good pipeline often uses OWL first, then SHACL.</div>
+    </div>
+
+    <!-- Q9 — Ch.4: Closed World -->
+    <div class="quiz-question" data-correct="c">
+      <div class="quiz-q-num">Question 9 — SHACL Fundamentals</div>
+      <div class="quiz-q-text">SHACL operates under which assumption?</div>
+      <ul class="quiz-options">
+        <li class="quiz-opt" data-val="a"><input type="radio" name="q9" value="a"/> Open World Assumption</li>
+        <li class="quiz-opt" data-val="b"><input type="radio" name="q9" value="b"/> Unique Name Assumption only</li>
+        <li class="quiz-opt" data-val="c"><input type="radio" name="q9" value="c"/> Closed World Assumption</li>
+        <li class="quiz-opt" data-val="d"><input type="radio" name="q9" value="d"/> No particular assumption</li>
+      </ul>
+      <div class="quiz-explanation">SHACL operates under the Closed World Assumption: if a fact is not stated, it is considered false. This is what allows SHACL to detect missing data as a validation error.</div>
+    </div>
+
+    <!-- Q10 — Ch.5: Node vs Property Shape -->
+    <div class="quiz-question" data-correct="b">
+      <div class="quiz-q-num">Question 10 — Shapes</div>
+      <div class="quiz-q-text">What distinguishes a property shape from a node shape in SHACL?</div>
+      <ul class="quiz-options">
+        <li class="quiz-opt" data-val="a"><input type="radio" name="q10" value="a"/> A property shape uses <code>sh:targetClass</code></li>
+        <li class="quiz-opt" data-val="b"><input type="radio" name="q10" value="b"/> A property shape must have <code>sh:path</code></li>
+        <li class="quiz-opt" data-val="c"><input type="radio" name="q10" value="c"/> A property shape cannot be reused</li>
+        <li class="quiz-opt" data-val="d"><input type="radio" name="q10" value="d"/> A node shape always contains <code>sh:path</code></li>
+      </ul>
+      <div class="quiz-explanation">The defining feature of a property shape is that it contains <code>sh:path</code>, which specifies which property it constrains. Node shapes target focus nodes directly and do not use <code>sh:path</code>.</div>
+    </div>
+
+    <!-- Q11 — Ch.5: Targeting -->
+    <div class="quiz-question" data-correct="a">
+      <div class="quiz-q-num">Question 11 — Targeting</div>
+      <div class="quiz-q-text">Which SHACL target declaration selects all nodes that appear as the subject of the <code>ex:author</code> predicate?</div>
+      <ul class="quiz-options">
+        <li class="quiz-opt" data-val="a"><input type="radio" name="q11" value="a"/> <code>sh:targetSubjectsOf ex:author</code></li>
+        <li class="quiz-opt" data-val="b"><input type="radio" name="q11" value="b"/> <code>sh:targetObjectsOf ex:author</code></li>
+        <li class="quiz-opt" data-val="c"><input type="radio" name="q11" value="c"/> <code>sh:targetClass ex:author</code></li>
+        <li class="quiz-opt" data-val="d"><input type="radio" name="q11" value="d"/> <code>sh:targetNode ex:author</code></li>
+      </ul>
+      <div class="quiz-explanation"><code>sh:targetSubjectsOf</code> selects all nodes that appear as the subject of triples with the given predicate. <code>sh:targetObjectsOf</code> would select the objects instead.</div>
+    </div>
+
+    <!-- Q12 — Ch.5: Property Paths -->
+    <div class="quiz-question" data-correct="d">
+      <div class="quiz-q-num">Question 12 — Property Paths</div>
+      <div class="quiz-q-text">What does <code>sh:path ( ex:author ex:name )</code> represent?</div>
+      <ul class="quiz-options">
+        <li class="quiz-opt" data-val="a"><input type="radio" name="q12" value="a"/> An alternative path — either <code>ex:author</code> or <code>ex:name</code></li>
+        <li class="quiz-opt" data-val="b"><input type="radio" name="q12" value="b"/> An inverse path from <code>ex:name</code> to <code>ex:author</code></li>
+        <li class="quiz-opt" data-val="c"><input type="radio" name="q12" value="c"/> A zero-or-more repetition of <code>ex:author</code></li>
+        <li class="quiz-opt" data-val="d"><input type="radio" name="q12" value="d"/> A sequence path — first follow <code>ex:author</code>, then follow <code>ex:name</code></li>
+      </ul>
+      <div class="quiz-explanation">An RDF list in <code>sh:path</code> defines a sequence path. It follows each step in order: starting from the focus node, follow <code>ex:author</code>, then from that node follow <code>ex:name</code>.</div>
+    </div>
+
+    <!-- Q13 — Ch.6: Cardinality -->
+    <div class="quiz-question" data-correct="c">
+      <div class="quiz-q-num">Question 13 — Cardinality</div>
+      <div class="quiz-q-text">A shape requires <code>sh:minCount 1</code> and <code>sh:maxCount 1</code> on <code>ex:mainTitle</code>. A book has two titles. What happens?</div>
+      <ul class="quiz-options">
+        <li class="quiz-opt" data-val="a"><input type="radio" name="q13" value="a"/> It conforms — <code>sh:maxCount</code> is just a suggestion</li>
+        <li class="quiz-opt" data-val="b"><input type="radio" name="q13" value="b"/> Only the <code>sh:minCount</code> violation is reported</li>
+        <li class="quiz-opt" data-val="c"><input type="radio" name="q13" value="c"/> A <code>sh:maxCount</code> violation is reported</li>
+        <li class="quiz-opt" data-val="d"><input type="radio" name="q13" value="d"/> The second title is silently ignored</li>
+      </ul>
+      <div class="quiz-explanation">Having two values when <code>sh:maxCount 1</code> is set produces a <code>sh:MaxCountConstraintComponent</code> violation. SHACL constraints are strict — there is no "suggestion" mode.</div>
+    </div>
+
+    <!-- Q14 — Ch.6: Value Types -->
+    <div class="quiz-question" data-correct="b">
+      <div class="quiz-q-num">Question 14 — Value Type Constraints</div>
+      <div class="quiz-q-text">Which constraint checks that a value is an IRI (not a literal or blank node)?</div>
+      <ul class="quiz-options">
+        <li class="quiz-opt" data-val="a"><input type="radio" name="q14" value="a"/> <code>sh:class</code></li>
+        <li class="quiz-opt" data-val="b"><input type="radio" name="q14" value="b"/> <code>sh:nodeKind sh:IRI</code></li>
+        <li class="quiz-opt" data-val="c"><input type="radio" name="q14" value="c"/> <code>sh:datatype xsd:anyURI</code></li>
+        <li class="quiz-opt" data-val="d"><input type="radio" name="q14" value="d"/> <code>sh:hasValue sh:IRI</code></li>
+      </ul>
+      <div class="quiz-explanation"><code>sh:nodeKind sh:IRI</code> constrains the node kind to be an IRI. <code>sh:class</code> checks <code>rdf:type</code>, and <code>sh:datatype</code> checks literal datatypes — neither checks for IRI vs literal directly.</div>
+    </div>
+
+    <!-- Q15 — Ch.6: Logical Constraints -->
+    <div class="quiz-question" data-correct="a">
+      <div class="quiz-q-num">Question 15 — Logical Constraints</div>
+      <div class="quiz-q-text">A person has both a <code>ex:birthDate</code> and a <code>ex:birthYear</code>. Does this conform to <code>sh:xone</code> applied to shapes requiring each?</div>
+      <ul class="quiz-options">
+        <li class="quiz-opt" data-val="a"><input type="radio" name="q15" value="a"/> No — <code>sh:xone</code> requires exactly one to be true</li>
+        <li class="quiz-opt" data-val="b"><input type="radio" name="q15" value="b"/> Yes — at least one is present</li>
+        <li class="quiz-opt" data-val="c"><input type="radio" name="q15" value="c"/> Yes — <code>sh:xone</code> is the same as <code>sh:or</code></li>
+        <li class="quiz-opt" data-val="d"><input type="radio" name="q15" value="d"/> It depends on the datatypes</li>
+      </ul>
+      <div class="quiz-explanation"><code>sh:xone</code> (exclusive or) requires that exactly one of the listed shapes conforms. If both conform, it is a violation. <code>sh:or</code> allows one or more to conform.</div>
+    </div>
+
+    <!-- Q16 — Ch.6: sh:closed -->
+    <div class="quiz-question" data-correct="b">
+      <div class="quiz-q-num">Question 16 — Closed Shapes</div>
+      <div class="quiz-q-text">A node shape has <code>sh:closed true</code> and <code>sh:ignoredProperties ( rdf:type )</code>, with one property shape for <code>ex:mainTitle</code>. A node has <code>rdf:type</code>, <code>ex:mainTitle</code>, and <code>ex:author</code>. Does it conform?</div>
+      <ul class="quiz-options">
+        <li class="quiz-opt" data-val="a"><input type="radio" name="q16" value="a"/> Yes — <code>ex:author</code> is allowed by default</li>
+        <li class="quiz-opt" data-val="b"><input type="radio" name="q16" value="b"/> No — <code>ex:author</code> is not declared in the shape or ignored</li>
+        <li class="quiz-opt" data-val="c"><input type="radio" name="q16" value="c"/> Yes — <code>sh:closed</code> only checks for missing properties</li>
+        <li class="quiz-opt" data-val="d"><input type="radio" name="q16" value="d"/> No — <code>rdf:type</code> is never allowed on closed shapes</li>
+      </ul>
+      <div class="quiz-explanation"><code>sh:closed true</code> means only properties declared in the shape (via <code>sh:property</code>) or listed in <code>sh:ignoredProperties</code> are allowed. <code>ex:author</code> is neither, so it violates.</div>
+    </div>
+
+    <!-- Q17 — Ch.6: Property Pairs -->
+    <div class="quiz-question" data-correct="c">
+      <div class="quiz-q-num">Question 17 — Property Pairs</div>
+      <div class="quiz-q-text">What does the constraint <code>sh:disjoint ex:editor</code> on a property shape for <code>ex:author</code> enforce?</div>
+      <ul class="quiz-options">
+        <li class="quiz-opt" data-val="a"><input type="radio" name="q17" value="a"/> The author and editor must be the same person</li>
+        <li class="quiz-opt" data-val="b"><input type="radio" name="q17" value="b"/> The focus node must not have an editor at all</li>
+        <li class="quiz-opt" data-val="c"><input type="radio" name="q17" value="c"/> The values of <code>ex:author</code> and <code>ex:editor</code> must share no common values</li>
+        <li class="quiz-opt" data-val="d"><input type="radio" name="q17" value="d"/> The author property must appear before the editor property</li>
+      </ul>
+      <div class="quiz-explanation"><code>sh:disjoint</code> ensures the set of values for the constrained property shares no elements with the set of values for the referenced property. If the same person appears as both author and editor, it is a violation.</div>
+    </div>
+
+    <!-- Q18 — Ch.7: SHACL-SPARQL -->
+    <div class="quiz-question" data-correct="a">
+      <div class="quiz-q-num">Question 18 — SHACL-SPARQL</div>
+      <div class="quiz-q-text">In a SHACL-SPARQL constraint on a node shape, what does the variable <code>$this</code> represent?</div>
+      <ul class="quiz-options">
+        <li class="quiz-opt" data-val="a"><input type="radio" name="q18" value="a"/> The current focus node being validated</li>
+        <li class="quiz-opt" data-val="b"><input type="radio" name="q18" value="b"/> The shape itself</li>
+        <li class="quiz-opt" data-val="c"><input type="radio" name="q18" value="c"/> The property path value</li>
+        <li class="quiz-opt" data-val="d"><input type="radio" name="q18" value="d"/> The validation report node</li>
+      </ul>
+      <div class="quiz-explanation"><code>$this</code> is a pre-bound variable that refers to the current focus node being validated. On a property shape, <code>$PATH</code> refers to the property path.</div>
+    </div>
+
+    <!-- Q19 — Ch.8: Validation Report -->
+    <div class="quiz-question" data-correct="d">
+      <div class="quiz-q-num">Question 19 — Validation Report</div>
+      <div class="quiz-q-text">What are the two required inputs to a SHACL validation engine?</div>
+      <ul class="quiz-options">
+        <li class="quiz-opt" data-val="a"><input type="radio" name="q19" value="a"/> An OWL ontology and a SPARQL query</li>
+        <li class="quiz-opt" data-val="b"><input type="radio" name="q19" value="b"/> A shapes graph and a validation report</li>
+        <li class="quiz-opt" data-val="c"><input type="radio" name="q19" value="c"/> A data graph and a SPARQL endpoint</li>
+        <li class="quiz-opt" data-val="d"><input type="radio" name="q19" value="d"/> A shapes graph and a data graph</li>
+      </ul>
+      <div class="quiz-explanation">A SHACL engine takes a shapes graph (the constraints) and a data graph (the data to validate) as input, and produces a validation report as output.</div>
+    </div>
+
+    <!-- Q20 — Ch.8: Validation Result Vocabulary -->
+    <div class="quiz-question" data-correct="c">
+      <div class="quiz-q-num">Question 20 — Validation Result</div>
+      <div class="quiz-q-text">In a SHACL validation result, which property identifies the specific node that caused the violation?</div>
+      <ul class="quiz-options">
+        <li class="quiz-opt" data-val="a"><input type="radio" name="q20" value="a"/> <code>sh:sourceShape</code></li>
+        <li class="quiz-opt" data-val="b"><input type="radio" name="q20" value="b"/> <code>sh:resultPath</code></li>
+        <li class="quiz-opt" data-val="c"><input type="radio" name="q20" value="c"/> <code>sh:focusNode</code></li>
+        <li class="quiz-opt" data-val="d"><input type="radio" name="q20" value="d"/> <code>sh:value</code></li>
+      </ul>
+      <div class="quiz-explanation"><code>sh:focusNode</code> identifies the node being validated that caused the result. <code>sh:value</code> is the specific value that failed, <code>sh:resultPath</code> is the property, and <code>sh:sourceShape</code> is the shape that defined the constraint.</div>
+    </div>
+
+  </div><!-- /quiz-questions -->
+
+  <div style="display:flex;gap:.75rem;justify-content:center;margin-bottom:1.5rem">
+    <button class="btn btn-dark" id="quiz-submit-btn" onclick="submitQuiz()">Submit Quiz</button>
+    <button class="btn btn-outline" id="quiz-reset-btn" onclick="resetQuiz()">Reset</button>
+  </div>
+
+  <div class="quiz-badge-wrap" id="quiz-badge">
+    <div class="quiz-badge">
+      <div class="badge-icon">&#127942;</div>
+      <h3>SHACL Course Completed!</h3>
+      <p id="quiz-badge-score"></p>
+    </div>
+  </div>
+
+  <div class="quiz-retry" id="quiz-retry">
+    <p>You scored <strong id="quiz-retry-score"></strong> — you need at least 80% (16/20) to earn the badge. Review the explanations above and try again!</p>
+    <button class="btn btn-dark" onclick="resetQuiz()">Try Again</button>
+  </div>
+
+</div>
+
+</div><!-- /container -->
+
+<script>
+// ── CodeMirror instances (declared globally) ──
+var shapesEditor, dataEditor, outputEditor;
+
+document.addEventListener('DOMContentLoaded', function() {
+  var cmConfig = {
+    mode: 'turtle',
+    lineNumbers: true,
+    matchBrackets: true,
+    tabSize: 2,
+    indentUnit: 2,
+    theme: 'default'
+  };
+
+  shapesEditor = CodeMirror.fromTextArea(document.getElementById('shapes-editor'), cmConfig);
+  dataEditor = CodeMirror.fromTextArea(document.getElementById('data-editor'), cmConfig);
+  outputEditor = CodeMirror.fromTextArea(document.getElementById('output'), {
+    mode: 'turtle',
+    lineNumbers: true,
+    readOnly: true,
+    theme: 'default'
+  });
+
+  // Load default example
+  loadExample('book');
+});
+
+// ── Tab switching helper ──────────────────
+function activateTab(tabId) {
+  document.querySelectorAll('.tab-btn').forEach(function(b) { b.classList.remove('active'); });
+  document.querySelectorAll('.tab-panel').forEach(function(p) { p.classList.remove('active'); });
+  var tabBtn = document.querySelector('.tab-btn[data-tab="' + tabId + '"]');
+  if (tabBtn) tabBtn.classList.add('active');
+  var panel = document.getElementById(tabId);
+  if (panel) panel.classList.add('active');
+
+  // Refresh CodeMirror instances when playground tab becomes visible
+  if (tabId === 'playground') {
+    setTimeout(function() {
+      if (shapesEditor) shapesEditor.refresh();
+      if (dataEditor) dataEditor.refresh();
+      if (outputEditor) outputEditor.refresh();
+    }, 10);
+  }
+}
+
+// ── Reference sub-view toggle ───────────────
+function showRefView(view) {
+  document.getElementById('ref-view-cheatsheet').style.display = view === 'cheatsheet' ? '' : 'none';
+  document.getElementById('ref-view-logic').style.display = view === 'logic' ? '' : 'none';
+  var btnC = document.getElementById('ref-btn-cheatsheet');
+  var btnL = document.getElementById('ref-btn-logic');
+  btnC.className = 'btn ' + (view === 'cheatsheet' ? 'btn-dark' : 'btn-outline');
+  btnL.className = 'btn ' + (view === 'logic' ? 'btn-dark' : 'btn-outline');
+}
+
+// ── Tab bar buttons ──────────────────────────
+document.querySelectorAll('.tab-btn').forEach(function(btn) {
+  btn.addEventListener('click', function() { activateTab(btn.dataset.tab); });
+});
+
+
+// ── Example data ───────────────────────────
+var prefixes = '@prefix rdf:  <http://www.w3.org/1999/02/22-rdf-syntax-ns#> .\n@prefix rdfs: <http://www.w3.org/2000/01/rdf-schema#> .\n@prefix owl:  <http://www.w3.org/2002/07/owl#> .\n@prefix sh:   <http://www.w3.org/ns/shacl#> .\n@prefix xsd:  <http://www.w3.org/2001/XMLSchema#> .\n@prefix foaf: <http://xmlns.com/foaf/0.1/> .\n@prefix ex:   <http://data.veronahe.no/> .\n@prefix ont:  <http://ontology.veronahe.no/> .\n@prefix rule: <http://shapes.veronahe.no/> .\n\n';
+
+var examples = {
+  book: {
+    shapes: prefixes + '# ── Book Shape (Ch. 6) ──────────────────\nrule:Book a sh:NodeShape ;\n  sh:targetClass ont:Book ;\n  sh:property rule:Book-mainTitle ;\n  sh:property rule:Book-author ;\n  sh:property rule:Book-pages ;\n  sh:property rule:Book-publisher ;\n  sh:property rule:Book-isbn .\n\nrule:Book-mainTitle a sh:PropertyShape ;\n  sh:path ont:mainTitle ;\n  sh:datatype xsd:string ;\n  sh:minCount 1 ;\n  sh:maxCount 1 ;\n  sh:minLength 2 .\n\nrule:Book-author a sh:PropertyShape ;\n  sh:path ont:author ;\n  sh:minCount 1 ;\n  sh:disjoint ont:editor ;\n  sh:or (\n    [ sh:class foaf:Person ]\n    [ sh:class ont:Person ]\n  ) .\n\nrule:Book-pages a sh:PropertyShape ;\n  sh:path ont:pages ;\n  sh:datatype xsd:integer ;\n  sh:maxExclusive 10000 .\n\nrule:Book-publisher a sh:PropertyShape ;\n  sh:path ont:publisher ;\n  sh:nodeKind sh:IRI .\n\nrule:Book-isbn a sh:PropertyShape ;\n  sh:path ont:isbn ;\n  sh:pattern "^(?:\\\\d{9}[\\\\dX]|\\\\d{13})$" .',
+    data: prefixes + '# ── Conforming data ─────────────────────\nex:TheHobbit a ont:Book ;\n  ont:mainTitle "The Hobbit, or There and Back Again" ;\n  ont:author ex:JRRTolkien ;\n  ont:pages "310"^^xsd:integer ;\n  ont:publisher ex:GeorgeAllenUnwin ;\n  ont:isbn "9780345339683" .\n\nex:JRRTolkien a foaf:Person .\n\n# ── Try adding non-conforming data ─────\n# ex:BadBook a ont:Book .\n# (missing mainTitle and author → violations)'
+  },
+  person: {
+    shapes: prefixes + '# ── Person Shape (Ch. 6) ────────────────\nrule:Person a sh:NodeShape ;\n  sh:targetClass ont:Person ;\n  sh:not rule:Agent-status ;\n  sh:and ( rule:Person-firstName rule:Person-surname ) ;\n  sh:or  ( rule:Person-birthDate rule:Person-birthYear ) .\n\nrule:Agent-status a sh:PropertyShape ;\n  sh:path foaf:status ;\n  sh:minCount 1 .\n\nrule:Person-firstName a sh:PropertyShape ;\n  sh:path ont:firstname ;\n  sh:minCount 1 .\n\nrule:Person-surname a sh:PropertyShape ;\n  sh:path ont:surname ;\n  sh:minCount 1 .\n\nrule:Person-birthDate a sh:PropertyShape ;\n  sh:path ont:birthDate ;\n  sh:datatype xsd:date ;\n  sh:minCount 1 .\n\nrule:Person-birthYear a sh:PropertyShape ;\n  sh:path ont:birthYear ;\n  sh:datatype xsd:gYear ;\n  sh:minCount 1 .',
+    data: prefixes + '# ── Conforming data ─────────────────────\nex:JRRTolkien a ont:Person ;\n  ont:firstname "John Ronald Reuel" ;\n  ont:surname "Tolkien" ;\n  ont:birthYear "1892"^^xsd:gYear .\n\nex:GeorgeOrwell a ont:Person ;\n  ont:firstname "George" ;\n  ont:surname "Orwell" ;\n  ont:birthDate "1903-06-25"^^xsd:date .\n\n# ── Non-conforming (missing surname) ───\n# ex:NeilGaiman a ont:Person ;\n#   ont:firstname "Neil" ;\n#   ont:birthYear "1960"^^xsd:gYear .'
+  },
+  lotr: {
+    shapes: prefixes + '# ── Lord of the Rings (Ch. 5) ──────────\n# Using zero-or-more path for series\n\nrule:Book-inSeries a sh:PropertyShape ;\n  sh:path [\n    sh:zeroOrMorePath ont:nextInSeries ;\n  ] ;\n  sh:name "books in the series" .\n\nrule:TheHobbit a sh:NodeShape ;\n  sh:targetNode ex:TheHobbit ;\n  sh:property [\n    sh:path ont:author ;\n    sh:hasValue ex:JRRTolkien ;\n  ] ;\n  sh:property [\n    sh:path ont:genre ;\n    sh:hasValue ont:Fantasy ;\n  ] .',
+    data: prefixes + '# ── The Lord of the Rings series ────────\nex:FellowshipOfTheRing a ont:Book ;\n  ont:author ex:JRRTolkien ;\n  ont:mainTitle "The Fellowship of the Ring" ;\n  ont:nextInSeries ex:TwoTowers .\n\nex:TwoTowers a ont:Book ;\n  ont:author ex:JRRTolkien ;\n  ont:mainTitle "The Two Towers" ;\n  ont:nextInSeries ex:ReturnOfTheKing .\n\nex:ReturnOfTheKing a ont:Book ;\n  ont:author ex:JRRTolkien ;\n  ont:mainTitle "The Return of the King" .\n\nex:TheHobbit a ont:Book ;\n  ont:author ex:JRRTolkien ;\n  ont:genre ont:Fantasy ;\n  ont:mainTitle "The Hobbit" .\n\nex:JRRTolkien a foaf:Person .'
+  },
+  blank: {
+    shapes: prefixes + '# Write your SHACL shapes here\n',
+    data: prefixes + '# Write your RDF data here\n'
+  },
+  capstone: {
+    shapes: prefixes + '# ═══════════════════════════════════════════\n# CAPSTONE EXERCISE\n# Design a shapes graph for YOUR domain.\n# ═══════════════════════════════════════════\n#\n# Requirements:\n#   ✓ At least 2 node shapes\n#   ✓ At least 5 property shapes (named!)\n#   ✓ Use constraints from 4+ categories:\n#     - Value type (sh:class, sh:datatype, sh:nodeKind)\n#     - Cardinality (sh:minCount, sh:maxCount)\n#     - Value range (sh:minExclusive, etc.)\n#     - String (sh:pattern, sh:minLength, etc.)\n#     - Property pair (sh:equals, sh:disjoint, etc.)\n#     - Logical (sh:and, sh:or, sh:not, sh:xone)\n#     - Other (sh:closed, sh:hasValue, sh:in)\n#\n# Ideas: Movies, Recipes, Employees, Courses,\n#        Music albums, Sensor data, Products...\n# ═══════════════════════════════════════════\n\n',
+    data: prefixes + '# ═══════════════════════════════════════════\n# CAPSTONE — Sample data\n# Write conforming AND non-conforming data.\n# ═══════════════════════════════════════════\n\n'
+  }
+};
+
+var DEFAULT_OUTPUT_COMMENT = '# Ready. Load an example or start writing your shapes and data graphs.\n#\n# Tip: Use the "Validate" button to run full SHACL Core validation\n# in your browser. Output will be a SHACL Validation Report in Turtle.\n#\n# Powered by N3.js for Turtle parsing and a built-in SHACL Core engine.';
+
+function loadExample(name) {
+  if (shapesEditor) shapesEditor.setValue(examples[name].shapes);
+  if (dataEditor) dataEditor.setValue(examples[name].data);
+  if (outputEditor) outputEditor.setValue('# Loaded "' + name + '" example.\n# Edit the shapes and data, then click Validate.');
+}
+
+function clearOutput() {
+  if (outputEditor) outputEditor.setValue(DEFAULT_OUTPUT_COMMENT);
+}
+
+function downloadTurtle() {
+  var shapes = shapesEditor ? shapesEditor.getValue() : '';
+  var data = dataEditor ? dataEditor.getValue() : '';
+  var content = '# ══════════════════════════════════════\n# SHAPES GRAPH\n# ══════════════════════════════════════\n\n' + shapes + '\n\n# ══════════════════════════════════════\n# DATA GRAPH\n# ══════════════════════════════════════\n\n' + data;
+  var blob = new Blob([content], {type: 'text/turtle'});
+  var a = document.createElement('a');
+  a.href = URL.createObjectURL(blob);
+  a.download = 'shacl-playground.ttl';
+  a.click();
+}
+
+// ── Exercise toggle ──────────────────────
+function toggleExercise(id) {
+  var card = document.getElementById(id);
+  card.classList.toggle('open');
+  // Lazy-init CodeMirror on first open
+  if (card.classList.contains('open')) {
+    initExerciseEditors(card);
+  }
+}
+
+// ── Lazy CodeMirror init for exercises ───
+function initExerciseEditors(card) {
+  // Init student editor
+  var editorTAs = card.querySelectorAll('.exercise-cm');
+  editorTAs.forEach(function(ta) {
+    if (ta.dataset.cmInit) return; // Already initialized
+    ta.dataset.cmInit = 'true';
+    var cm = CodeMirror.fromTextArea(ta, {
+      mode: 'turtle',
+      lineNumbers: true,
+      matchBrackets: true,
+      tabSize: 2,
+      indentUnit: 2,
+      theme: 'default'
+    });
+    ta._cm = cm;
+    // Store ref on the wrapper too
+    card._editorCM = cm;
+    setTimeout(function() { cm.refresh(); }, 10);
+  });
+
+  // Init solution editors (read-only)
+  var solTAs = card.querySelectorAll('.exercise-sol-cm');
+  solTAs.forEach(function(ta) {
+    if (ta.dataset.cmInit) return;
+    ta.dataset.cmInit = 'true';
+    var cm = CodeMirror.fromTextArea(ta, {
+      mode: 'turtle',
+      lineNumbers: true,
+      readOnly: true,
+      theme: 'default'
+    });
+    ta._cm = cm;
+    setTimeout(function() { cm.refresh(); }, 10);
+  });
+}
+
+// ── Check exercise syntax ────────────────
+function checkExercise(id) {
+  var card = document.getElementById(id);
+  var feedback = document.getElementById(id + '-feedback');
+  var editorTA = card.querySelector('.exercise-cm');
+  if (!editorTA || !editorTA._cm) return;
+
+  var text = editorTA._cm.getValue().trim();
+  feedback.classList.add('show');
+
+  if (!text || text.split('\n').every(function(l) { return l.trim() === '' || l.trim().startsWith('#') || l.trim().startsWith('@prefix'); })) {
+    feedback.className = 'exercise-feedback show info';
+    feedback.textContent = 'Your editor is empty — write your answer above, then check again.';
+    return;
+  }
+
+  if (typeof N3 === 'undefined') {
+    feedback.className = 'exercise-feedback show fail';
+    feedback.textContent = 'N3.js not loaded. Check your internet connection and reload.';
+    return;
+  }
+
+  try {
+    var parser = new N3.Parser();
+    var quads = parser.parse(text);
+    feedback.className = 'exercise-feedback show pass';
+    feedback.textContent = '✓ Valid Turtle — ' + quads.length + ' triple(s) parsed successfully.';
+  } catch (e) {
+    feedback.className = 'exercise-feedback show fail';
+    var msg = e.message || 'Unknown parse error';
+    feedback.textContent = '✗ Syntax error: ' + msg;
+  }
+}
+
+// ── Show solution ────────────────────────
+function showSolution(id) {
+  var sol = document.getElementById(id + '-solution');
+  if (sol.classList.contains('show')) {
+    sol.classList.remove('show');
+  } else {
+    sol.classList.add('show');
+    // Refresh CodeMirror in solution
+    var cms = sol.querySelectorAll('.CodeMirror');
+    cms.forEach(function(cm) {
+      if (cm.CodeMirror) cm.CodeMirror.refresh();
+    });
+  }
+}
+
+// ── Block navigation ─────────────────────
+var blockEditors = {}; // cache: { 'A-shapes': cm, 'A-data': cm, 'A-output': cm, … }
+
+function showExBlock(blockId) {
+  document.getElementById('ex-overview').style.display = 'none';
+  ['A','B','C','D','E'].forEach(function(b) {
+    var el = document.getElementById('ex-block-' + b);
+    if (el) el.style.display = (b === blockId) ? '' : 'none';
+  });
+  initBlockEditors(blockId);
+  window.scrollTo(0, 0);
+}
+
+function showExOverview() {
+  ['A','B','C','D','E'].forEach(function(b) {
+    var el = document.getElementById('ex-block-' + b);
+    if (el) el.style.display = 'none';
+  });
+  document.getElementById('ex-overview').style.display = '';
+  window.scrollTo(0, 0);
+}
+
+function initBlockEditors(blockId) {
+  var cfg = { mode:'turtle', lineNumbers:true, matchBrackets:true, tabSize:2, indentUnit:2, theme:'default' };
+  ['shapes','data','output'].forEach(function(kind) {
+    var key = blockId + '-' + kind;
+    if (blockEditors[key]) { blockEditors[key].refresh(); return; }
+    var ta = document.getElementById('block-' + key);
+    if (!ta) return;
+    var opts = Object.assign({}, cfg);
+    if (kind === 'output') { opts.readOnly = true; opts.lineNumbers = false; }
+    var cm = CodeMirror.fromTextArea(ta, opts);
+    blockEditors[key] = cm;
+    setTimeout(function(){ cm.refresh(); }, 20);
+  });
+  // Also init solution editors inside any exercise cards in this block
+  var block = document.getElementById('ex-block-' + blockId);
+  if (block) {
+    block.querySelectorAll('.exercise-sol-cm').forEach(function(ta) {
+      if (ta.dataset.cmInit) return;
+      ta.dataset.cmInit = 'true';
+      var cm = CodeMirror.fromTextArea(ta, { mode:'turtle', lineNumbers:true, readOnly:true, theme:'default' });
+      ta._cm = cm;
+      setTimeout(function(){ cm.refresh(); }, 20);
+    });
+  }
+}
+
+function runBlockValidation(blockId) {
+  var shapesCM = blockEditors[blockId + '-shapes'];
+  var dataCM   = blockEditors[blockId + '-data'];
+  var outputCM = blockEditors[blockId + '-output'];
+  if (!shapesCM || !dataCM || !outputCM) return;
+
+  var shapesText = shapesCM.getValue().trim();
+  var dataText   = dataCM.getValue().trim();
+
+  if (!shapesText || shapesText.split('\n').every(function(l){ var t=l.trim(); return !t || t.startsWith('#') || t.startsWith('@prefix'); })) {
+    outputCM.setValue('# Write your shape(s) in the Shapes Graph first.');
+    return;
+  }
+
+  outputCM.setValue('# Validating …');
+
+  parseTurtle(shapesText, 'Shapes').then(function(shapesStore) {
+    return parseTurtle(dataText, 'Data').then(function(dataStore) {
+      var report = validate(shapesStore, dataStore, shapesText, dataText);
+      outputCM.setValue(report);
+    });
+  }).catch(function(err) {
+    outputCM.setValue('# Error: ' + err.message);
+  });
+}
+
+function clearBlockOutput(blockId) {
+  var cm = blockEditors[blockId + '-output'];
+  if (cm) cm.setValue('# Output cleared.');
+}
+
+// ═══════════════════════════════════════════════════════════════
+//  SHACL CORE VALIDATOR
+// ═══════════════════════════════════════════════════════════════
+
+function runValidation() {
+  // Check N3 library
+  if (typeof N3 === 'undefined') {
+    outputEditor.setValue('# Error: N3.js library not loaded.\n#\n# SHACL validation requires an internet connection to load N3.js from CDN.\n# Please check your network connection and reload the page.');
+    return;
+  }
+
+  var shapesText = shapesEditor.getValue();
+  var dataText = dataEditor.getValue();
+
+  outputEditor.setValue('# Parsing graphs...');
+
+  // Parse both graphs, then validate
+  Promise.all([
+    parseTurtle(shapesText, 'Shapes Graph'),
+    parseTurtle(dataText, 'Data Graph')
+  ]).then(function(results) {
+    var shapesStore = results[0];
+    var dataStore = results[1];
+    try {
+      var report = validate(shapesStore, dataStore, shapesText, dataText);
+      outputEditor.setValue(report);
+    } catch (e) {
+      outputEditor.setValue('# Validation error: ' + e.message + '\n#\n# ' + (e.stack || '').replace(/\n/g, '\n# '));
+    }
+  }).catch(function(err) {
+    outputEditor.setValue('# ' + err.message.replace(/\n/g, '\n# '));
+  });
+}
+
+function parseTurtle(text, label) {
+  return new Promise(function(resolve, reject) {
+    var parser = new N3.Parser();
+    var store = new N3.Store();
+    try {
+      var quads = parser.parse(text);
+      store.addQuads(quads);
+      resolve(store);
+    } catch (e) {
+      var msg = 'Parse error in ' + label + ':\n  ' + e.message;
+      var lineMatch = e.message.match(/line (\d+)/i);
+      if (lineMatch) {
+        msg += '\n  (at line ' + lineMatch[1] + ')';
+      }
+      reject(new Error(msg));
+    }
+  });
+}
+
+// ── Namespace constants ────────────────────────
+var SH  = 'http://www.w3.org/ns/shacl#';
+var RDF = 'http://www.w3.org/1999/02/22-rdf-syntax-ns#';
+var RDFS = 'http://www.w3.org/2000/01/rdf-schema#';
+var XSD = 'http://www.w3.org/2001/XMLSchema#';
+var OWL = 'http://www.w3.org/2002/07/owl#';
+
+var sh = function(local) { return SH + local; };
+var rdf = function(local) { return RDF + local; };
+var rdfs = function(local) { return RDFS + local; };
+var xsd = function(local) { return XSD + local; };
+
+// ── Hardcoded prefix map (extended at runtime) ──
+var BUILTIN_PREFIXES = {
+  'http://www.w3.org/ns/shacl#': 'sh',
+  'http://www.w3.org/1999/02/22-rdf-syntax-ns#': 'rdf',
+  'http://www.w3.org/2000/01/rdf-schema#': 'rdfs',
+  'http://www.w3.org/2001/XMLSchema#': 'xsd',
+  'http://www.w3.org/2002/07/owl#': 'owl',
+  'http://xmlns.com/foaf/0.1/': 'foaf',
+  'http://www.w3.org/2004/02/skos/core#': 'skos',
+  'http://data.veronahe.no/': 'ex',
+  'http://ontology.veronahe.no/': 'ont',
+  'http://shapes.veronahe.no/': 'rule',
+};
+
+function buildPrefixMap(shapesText, dataText) {
+  var map = Object.assign({}, BUILTIN_PREFIXES);
+  var re = /@prefix\s+(\w*)\s*:\s*<([^>]+)>\s*\./g;
+  var m;
+  var texts = [shapesText, dataText];
+  for (var i = 0; i < texts.length; i++) {
+    re.lastIndex = 0;
+    while ((m = re.exec(texts[i])) !== null) {
+      map[m[2]] = m[1];
+    }
+  }
+  return map;
+}
+
+function shorten(term, prefixMap) {
+  if (!term) return '(undefined)';
+  var val = (typeof term === 'string') ? term : term.value;
+  if (!val) return '(undefined)';
+
+  // Handle N3 DataFactory terms
+  if (term.termType === 'Literal') {
+    var s = JSON.stringify(val);
+    if (term.language) return s + '@' + term.language;
+    if (term.datatype) {
+      var dt = term.datatype.value;
+      if (dt === xsd('string')) return s;
+      if (dt === xsd('boolean')) return val;
+      if (dt === xsd('integer') || dt === xsd('int') || dt === xsd('decimal') ||
+          dt === xsd('float') || dt === xsd('double')) return val;
+      return s + '^^' + shorten(term.datatype, prefixMap);
+    }
+    return s;
+  }
+  if (term.termType === 'BlankNode') return '_:' + val;
+
+  // Named node
+  for (var ns in prefixMap) {
+    if (val.startsWith(ns)) {
+      return prefixMap[ns] + ':' + val.slice(ns.length);
+    }
+  }
+  return '<' + val + '>';
+}
+
+// Turtle-safe serialization for term values in output
+function turtleTerm(term, prefixMap) {
+  if (!term) return '""';
+  if (term.termType === 'Literal') {
+    var escaped = term.value.replace(/\\/g, '\\\\').replace(/"/g, '\\"').replace(/\n/g, '\\n').replace(/\r/g, '\\r');
+    var s = '"' + escaped + '"';
+    if (term.language) return s + '@' + term.language;
+    if (term.datatype) {
+      var dt = term.datatype.value;
+      if (dt === xsd('string')) return s;
+      if (dt === xsd('integer') || dt === xsd('int') || dt === xsd('decimal') ||
+          dt === xsd('float') || dt === xsd('double') || dt === xsd('boolean')) return term.value;
+      return s + '^^' + shortenIRI(dt, prefixMap);
+    }
+    return s;
+  }
+  if (term.termType === 'BlankNode') return '_:' + term.value;
+  // NamedNode
+  return shortenIRI(term.value, prefixMap);
+}
+
+function shortenIRI(iri, prefixMap) {
+  for (var ns in prefixMap) {
+    if (iri.startsWith(ns)) {
+      return prefixMap[ns] + ':' + iri.slice(ns.length);
+    }
+  }
+  return '<' + iri + '>';
+}
+
+// ── RDF list parsing ──────────────────────────
+function parseRdfList(store, listNode) {
+  var items = [];
+  var current = listNode;
+  var nilVal = rdf('nil');
+  var safety = 500;
+  while (current && current.value !== nilVal && safety-- > 0) {
+    var firsts = store.getQuads(current, N3.DataFactory.namedNode(rdf('first')), null);
+    if (firsts.length > 0) items.push(firsts[0].object);
+    var rests = store.getQuads(current, N3.DataFactory.namedNode(rdf('rest')), null);
+    if (rests.length > 0) {
+      current = rests[0].object;
+    } else {
+      break;
+    }
+  }
+  return items;
+}
+
+// ── Property path evaluation ──────────────────
+function evaluatePath(dataStore, shapesStore, focusNode, pathNode) {
+  // Simple predicate path (named node)
+  if (pathNode.termType === 'NamedNode') {
+    return dataStore.getQuads(focusNode, pathNode, null).map(function(q) { return q.object; });
+  }
+
+  // Complex path (blank node with path properties)
+  if (pathNode.termType === 'BlankNode') {
+    // Check for inversePath
+    var inverseQ = shapesStore.getQuads(pathNode, N3.DataFactory.namedNode(sh('inversePath')), null);
+    if (inverseQ.length > 0) {
+      var inner = inverseQ[0].object;
+      if (inner.termType === 'NamedNode') {
+        return dataStore.getQuads(null, inner, focusNode).map(function(q) { return q.subject; });
+      }
+      return evaluateInversePath(dataStore, shapesStore, focusNode, inner);
+    }
+
+    // Check for alternativePath
+    var altQ = shapesStore.getQuads(pathNode, N3.DataFactory.namedNode(sh('alternativePath')), null);
+    if (altQ.length > 0) {
+      var listNode = altQ[0].object;
+      var alternatives = parseRdfList(shapesStore, listNode);
+      var results = new Set();
+      for (var i = 0; i < alternatives.length; i++) {
+        var vals = evaluatePath(dataStore, shapesStore, focusNode, alternatives[i]);
+        for (var j = 0; j < vals.length; j++) {
+          results.add(termKey(vals[j]));
+        }
+      }
+      return Array.from(results).map(function(k) { return keyToTerm(k, dataStore, shapesStore, focusNode, alternatives); });
+    }
+
+    // Check for zeroOrMorePath
+    var zomQ = shapesStore.getQuads(pathNode, N3.DataFactory.namedNode(sh('zeroOrMorePath')), null);
+    if (zomQ.length > 0) {
+      return evaluateTransitivePath(dataStore, shapesStore, focusNode, zomQ[0].object, true);
+    }
+
+    // Check for oneOrMorePath
+    var oomQ = shapesStore.getQuads(pathNode, N3.DataFactory.namedNode(sh('oneOrMorePath')), null);
+    if (oomQ.length > 0) {
+      return evaluateTransitivePath(dataStore, shapesStore, focusNode, oomQ[0].object, false);
+    }
+
+    // Check for zeroOrOnePath
+    var zooQ = shapesStore.getQuads(pathNode, N3.DataFactory.namedNode(sh('zeroOrOnePath')), null);
+    if (zooQ.length > 0) {
+      var zooInner = zooQ[0].object;
+      var oneStep = evaluatePath(dataStore, shapesStore, focusNode, zooInner);
+      var zooResults = new Map();
+      zooResults.set(termKey(focusNode), focusNode);
+      for (var zi = 0; zi < oneStep.length; zi++) zooResults.set(termKey(oneStep[zi]), oneStep[zi]);
+      return Array.from(zooResults.values());
+    }
+
+    // Check for sequence path (blank node that is an RDF list)
+    var firstQ = shapesStore.getQuads(pathNode, N3.DataFactory.namedNode(rdf('first')), null);
+    if (firstQ.length > 0) {
+      var steps = parseRdfList(shapesStore, pathNode);
+      return evaluateSequencePath(dataStore, shapesStore, focusNode, steps);
+    }
+  }
+
+  return [];
+}
+
+function evaluateInversePath(dataStore, shapesStore, focusNode, innerPath) {
+  var results = [];
+  var seen = new Set();
+  var allQuads = dataStore.getQuads();
+  for (var i = 0; i < allQuads.length; i++) {
+    var sk = termKey(allQuads[i].subject);
+    if (!seen.has(sk)) {
+      seen.add(sk);
+      var vals = evaluatePath(dataStore, shapesStore, allQuads[i].subject, innerPath);
+      if (vals.some(function(v) { return termKey(v) === termKey(focusNode); })) {
+        results.push(allQuads[i].subject);
+      }
+    }
+  }
+  return results;
+}
+
+function evaluateSequencePath(dataStore, shapesStore, focusNode, steps) {
+  if (steps.length === 0) return [focusNode];
+  var current = [focusNode];
+  for (var si = 0; si < steps.length; si++) {
+    var next = [];
+    var seen = new Set();
+    for (var ci = 0; ci < current.length; ci++) {
+      var vals = evaluatePath(dataStore, shapesStore, current[ci], steps[si]);
+      for (var vi = 0; vi < vals.length; vi++) {
+        var k = termKey(vals[vi]);
+        if (!seen.has(k)) {
+          seen.add(k);
+          next.push(vals[vi]);
+        }
+      }
+    }
+    current = next;
+  }
+  return current;
+}
+
+function evaluateTransitivePath(dataStore, shapesStore, focusNode, innerPath, includeStart) {
+  var visited = new Set();
+  var results = new Map();
+  if (includeStart) results.set(termKey(focusNode), focusNode);
+
+  var queue = [focusNode];
+  visited.add(termKey(focusNode));
+
+  while (queue.length > 0) {
+    var current = queue.shift();
+    var nexts = evaluatePath(dataStore, shapesStore, current, innerPath);
+    for (var i = 0; i < nexts.length; i++) {
+      var k = termKey(nexts[i]);
+      if (!visited.has(k)) {
+        visited.add(k);
+        results.set(k, nexts[i]);
+        queue.push(nexts[i]);
+      }
+    }
+  }
+
+  if (!includeStart) results.delete(termKey(focusNode));
+  return Array.from(results.values());
+}
+
+// Helper: For alternativePath results we need to rebuild terms
+function keyToTerm(key, dataStore, shapesStore, focusNode, alternatives) {
+  for (var i = 0; i < alternatives.length; i++) {
+    var vals = evaluatePath(dataStore, shapesStore, focusNode, alternatives[i]);
+    for (var j = 0; j < vals.length; j++) {
+      if (termKey(vals[j]) === key) return vals[j];
+    }
+  }
+  return N3.DataFactory.namedNode(key); // fallback
+}
+
+function termKey(term) {
+  if (!term) return '';
+  if (term.termType === 'Literal') {
+    return 'L:' + term.value + ':' + (term.language || '') + ':' + (term.datatype ? term.datatype.value : '');
+  }
+  if (term.termType === 'BlankNode') return 'B:' + term.value;
+  return term.value;
+}
+
+function termsEqual(a, b) {
+  return termKey(a) === termKey(b);
+}
+
+// ── Literal comparison helper ─────────────────
+function compareLiterals(a, b) {
+  var aNum = toNumber(a);
+  var bNum = toNumber(b);
+  if (!isNaN(aNum) && !isNaN(bNum)) return aNum - bNum;
+
+  var aDate = toDate(a);
+  var bDate = toDate(b);
+  if (aDate !== null && bDate !== null) return aDate - bDate;
+
+  var aStr = (typeof a === 'string') ? a : (a.value || '');
+  var bStr = (typeof b === 'string') ? b : (b.value || '');
+  if (aStr < bStr) return -1;
+  if (aStr > bStr) return 1;
+  return 0;
+}
+
+function toNumber(term) {
+  if (typeof term === 'number') return term;
+  var val = (typeof term === 'string') ? term : (term.value || '');
+  return Number(val);
+}
+
+function toDate(term) {
+  var val = (typeof term === 'string') ? term : (term.value || '');
+  if (/^\d{4}$/.test(val)) return new Date(val + '-01-01T00:00:00Z').getTime();
+  var d = new Date(val);
+  return isNaN(d.getTime()) ? null : d.getTime();
+}
+
+function getLiteralString(term) {
+  if (term.termType === 'Literal') return term.value;
+  if (term.termType === 'NamedNode') return term.value;
+  return term.value || '';
+}
+
+// ── Get integer value from literal ────────────
+function getIntValue(store, subject, predicate) {
+  var quads = store.getQuads(subject, N3.DataFactory.namedNode(predicate), null);
+  if (quads.length === 0) return undefined;
+  return parseInt(quads[0].object.value, 10);
+}
+
+function getLiteralValue(store, subject, predicate) {
+  var quads = store.getQuads(subject, N3.DataFactory.namedNode(predicate), null);
+  if (quads.length === 0) return undefined;
+  return quads[0].object;
+}
+
+function getBoolValue(store, subject, predicate) {
+  var quads = store.getQuads(subject, N3.DataFactory.namedNode(predicate), null);
+  if (quads.length === 0) return undefined;
+  return quads[0].object.value === 'true';
+}
+
+function getNodeValue(store, subject, predicate) {
+  var quads = store.getQuads(subject, N3.DataFactory.namedNode(predicate), null);
+  if (quads.length === 0) return undefined;
+  return quads[0].object;
+}
+
+function getNodeValues(store, subject, predicate) {
+  return store.getQuads(subject, N3.DataFactory.namedNode(predicate), null).map(function(q) { return q.object; });
+}
+
+// ── Path pretty printing ──────────────────────
+function pathToString(shapesStore, pathNode, prefixMap) {
+  if (pathNode.termType === 'NamedNode') return shorten(pathNode, prefixMap);
+  if (pathNode.termType === 'BlankNode') {
+    var inverseQ = shapesStore.getQuads(pathNode, N3.DataFactory.namedNode(sh('inversePath')), null);
+    if (inverseQ.length > 0) return '^' + pathToString(shapesStore, inverseQ[0].object, prefixMap);
+
+    var altQ = shapesStore.getQuads(pathNode, N3.DataFactory.namedNode(sh('alternativePath')), null);
+    if (altQ.length > 0) {
+      var items = parseRdfList(shapesStore, altQ[0].object);
+      return items.map(function(i) { return pathToString(shapesStore, i, prefixMap); }).join('|');
+    }
+
+    var zomQ = shapesStore.getQuads(pathNode, N3.DataFactory.namedNode(sh('zeroOrMorePath')), null);
+    if (zomQ.length > 0) return pathToString(shapesStore, zomQ[0].object, prefixMap) + '*';
+
+    var oomQ = shapesStore.getQuads(pathNode, N3.DataFactory.namedNode(sh('oneOrMorePath')), null);
+    if (oomQ.length > 0) return pathToString(shapesStore, oomQ[0].object, prefixMap) + '+';
+
+    var zooQ = shapesStore.getQuads(pathNode, N3.DataFactory.namedNode(sh('zeroOrOnePath')), null);
+    if (zooQ.length > 0) return pathToString(shapesStore, zooQ[0].object, prefixMap) + '?';
+
+    // Sequence path (RDF list)
+    var firstQ = shapesStore.getQuads(pathNode, N3.DataFactory.namedNode(rdf('first')), null);
+    if (firstQ.length > 0) {
+      var steps = parseRdfList(shapesStore, pathNode);
+      return steps.map(function(s) { return pathToString(shapesStore, s, prefixMap); }).join('/');
+    }
+  }
+  return shorten(pathNode, prefixMap);
+}
+
+// ── Constraint Component IRI mapping ──────────
+var CONSTRAINT_COMPONENT_MAP = {
+  'class': 'ClassConstraintComponent',
+  'datatype': 'DatatypeConstraintComponent',
+  'nodeKind': 'NodeKindConstraintComponent',
+  'minCount': 'MinCountConstraintComponent',
+  'maxCount': 'MaxCountConstraintComponent',
+  'minExclusive': 'MinExclusiveConstraintComponent',
+  'maxExclusive': 'MaxExclusiveConstraintComponent',
+  'minInclusive': 'MinInclusiveConstraintComponent',
+  'maxInclusive': 'MaxInclusiveConstraintComponent',
+  'minLength': 'MinLengthConstraintComponent',
+  'maxLength': 'MaxLengthConstraintComponent',
+  'pattern': 'PatternConstraintComponent',
+  'languageIn': 'LanguageInConstraintComponent',
+  'uniqueLang': 'UniqueLangConstraintComponent',
+  'equals': 'EqualsConstraintComponent',
+  'disjoint': 'DisjointConstraintComponent',
+  'lessThan': 'LessThanConstraintComponent',
+  'lessThanOrEquals': 'LessThanOrEqualsConstraintComponent',
+  'not': 'NotConstraintComponent',
+  'and': 'AndConstraintComponent',
+  'or': 'OrConstraintComponent',
+  'xone': 'XoneConstraintComponent',
+  'node': 'NodeConstraintComponent',
+  'hasValue': 'HasValueConstraintComponent',
+  'in': 'InConstraintComponent',
+  'closed': 'ClosedConstraintComponent',
+  'qualifiedMinCount': 'QualifiedMinCountConstraintComponent',
+  'qualifiedMaxCount': 'QualifiedMaxCountConstraintComponent',
+};
+
+function ccIRI(constraintName) {
+  var local = CONSTRAINT_COMPONENT_MAP[constraintName];
+  return local ? sh(local) : sh(constraintName + 'ConstraintComponent');
+}
+
+// ═══════════════════════════════════════════════
+//  MAIN VALIDATION FUNCTION
+// ═══════════════════════════════════════════════
+function validate(shapesStore, dataStore, shapesText, dataText) {
+  var prefixMap = buildPrefixMap(shapesText, dataText);
+
+  // Find all shapes (NodeShape or PropertyShape with targets)
+  var shapes = findShapesWithTargets(shapesStore, dataStore);
+
+  if (shapes.length === 0) {
+    return '@prefix sh: <http://www.w3.org/ns/shacl#> .\n\n# No shapes with targets found.\n#\n# Possible reasons:\n#   - No shapes are declared with sh:targetClass, sh:targetNode,\n#     sh:targetSubjectsOf, sh:targetObjectsOf, or implicit class targets\n#   - The shapes graph may be empty or contain only property shapes\n#     without an owning node shape that has a target\n#\n# Tip: Make sure your shapes use one of the targeting mechanisms\n# described in the Cheat Sheet tab.\n\n[] a sh:ValidationReport ;\n    sh:conforms true .';
+  }
+
+  // Collect all focus node results
+  var focusNodeResults = new Map();
+
+  // All violations collected globally
+  var allViolations = [];
+
+  for (var si = 0; si < shapes.length; si++) {
+    var shapeEntry = shapes[si];
+    var shape = shapeEntry.shape;
+    var targetNodes = shapeEntry.targetNodes;
+
+    // Check sh:deactivated
+    if (getBoolValue(shapesStore, shape, sh('deactivated')) === true) continue;
+
+    for (var ti = 0; ti < targetNodes.length; ti++) {
+      var focusNode = targetNodes[ti];
+      var fk = termKey(focusNode);
+      if (!focusNodeResults.has(fk)) {
+        focusNodeResults.set(fk, { focusNode: focusNode, violations: [], shapes: [] });
+      }
+      var entry = focusNodeResults.get(fk);
+      entry.shapes.push(shape);
+
+      // Validate the focus node against the shape
+      var shapeViolations = validateNodeAgainstShape(shapesStore, dataStore, focusNode, shape, prefixMap, false);
+      for (var vi = 0; vi < shapeViolations.length; vi++) {
+        entry.violations.push(shapeViolations[vi]);
+        allViolations.push(shapeViolations[vi]);
+      }
+    }
+  }
+
+  // Build Turtle report
+  var totalViolations = allViolations.length;
+  var conforms = totalViolations === 0;
+
+  // Collect all prefixes used
+  var usedPrefixes = {};
+  // Always include sh and xsd
+  usedPrefixes['sh'] = 'http://www.w3.org/ns/shacl#';
+  usedPrefixes['xsd'] = 'http://www.w3.org/2001/XMLSchema#';
+
+  // Scan violations for prefixed names and add their namespaces
+  // We just include all known prefixes from input for convenience
+  var reversePrefixMap = {};
+  for (var ns in prefixMap) {
+    var prefix = prefixMap[ns];
+    reversePrefixMap[prefix] = ns;
+    usedPrefixes[prefix] = ns;
+  }
+
+  // Build prefix block
+  var turtle = '';
+  var prefixKeys = Object.keys(usedPrefixes).sort();
+  for (var pi = 0; pi < prefixKeys.length; pi++) {
+    var p = prefixKeys[pi];
+    turtle += '@prefix ' + p + ': ' + padRight('<' + usedPrefixes[p] + '>', 50 - p.length) + ' .\n';
+  }
+
+  turtle += '\n';
+  turtle += '# ══════════════════════════════════════════\n';
+  turtle += '#   SHACL Validation Report\n';
+  turtle += '#   Focus Nodes: ' + focusNodeResults.size + ' evaluated\n';
+  turtle += '# ══════════════════════════════════════════\n\n';
+
+  if (conforms) {
+    turtle += '[] a sh:ValidationReport ;\n';
+    turtle += '    sh:conforms true .';
+    if (focusNodeResults.size === 0) {
+      turtle += '\n\n# No target nodes found in the data graph matching any shape targets.\n';
+      turtle += '# Check that your data contains instances (rdf:type) of the classes\n';
+      turtle += '# referenced in sh:targetClass, or nodes referenced in sh:targetNode.';
+    }
+  } else {
+    turtle += '[] a sh:ValidationReport ;\n';
+    turtle += '    sh:conforms false';
+
+    for (var ri = 0; ri < allViolations.length; ri++) {
+      var v = allViolations[ri];
+      turtle += ' ;\n    sh:result [\n';
+      turtle += '        a sh:ValidationResult ;\n';
+
+      // sh:resultSeverity
+      var sevShort = shortenIRI(v.severity, prefixMap);
+      turtle += '        sh:resultSeverity ' + sevShort + ' ;\n';
+
+      // sh:focusNode
+      if (v.focusNode) {
+        turtle += '        sh:focusNode ' + turtleTerm(v.focusNode, prefixMap) + ' ;\n';
+      }
+
+      // sh:resultPath
+      if (v.resultPath) {
+        turtle += '        sh:resultPath ' + turtleTerm(v.resultPath, prefixMap) + ' ;\n';
+      }
+
+      // sh:sourceShape
+      if (v.sourceShape) {
+        turtle += '        sh:sourceShape ' + turtleTerm(v.sourceShape, prefixMap) + ' ;\n';
+      }
+
+      // sh:value (when available)
+      if (v.value !== undefined && v.value !== null) {
+        turtle += '        sh:value ' + turtleTerm(v.value, prefixMap) + ' ;\n';
+      }
+
+      // sh:resultMessage
+      var escapedMsg = v.message.replace(/\\/g, '\\\\').replace(/"/g, '\\"').replace(/\n/g, '\\n').replace(/\r/g, '\\r');
+      turtle += '        sh:resultMessage "' + escapedMsg + '" ;\n';
+
+      // sh:sourceConstraintComponent
+      if (v.sourceConstraintComponent) {
+        turtle += '        sh:sourceConstraintComponent ' + shortenIRI(v.sourceConstraintComponent, prefixMap) + ' ;\n';
+      }
+
+      turtle += '    ]';
+    }
+
+    turtle += ' .';
+  }
+
+  turtle += '\n';
+
+  return turtle;
+}
+
+function padRight(str, minLen) {
+  while (str.length < minLen) str += ' ';
+  return str;
+}
+
+// ── Find all shapes with targets ──────────────
+function findShapesWithTargets(shapesStore, dataStore) {
+  var results = [];
+  var processedShapes = new Set();
+
+  var allShapeNodes = new Set();
+
+  for (var q of shapesStore.getQuads(null, N3.DataFactory.namedNode(rdf('type')), N3.DataFactory.namedNode(sh('NodeShape')))) {
+    allShapeNodes.add(q.subject);
+  }
+  for (var q of shapesStore.getQuads(null, N3.DataFactory.namedNode(rdf('type')), N3.DataFactory.namedNode(sh('PropertyShape')))) {
+    allShapeNodes.add(q.subject);
+  }
+  var targetPreds = [sh('targetClass'), sh('targetNode'), sh('targetSubjectsOf'), sh('targetObjectsOf')];
+  for (var pi = 0; pi < targetPreds.length; pi++) {
+    for (var q of shapesStore.getQuads(null, N3.DataFactory.namedNode(targetPreds[pi]), null)) {
+      allShapeNodes.add(q.subject);
+    }
+  }
+
+  for (var shape of allShapeNodes) {
+    var sk = termKey(shape);
+    if (processedShapes.has(sk)) continue;
+    processedShapes.add(sk);
+
+    var targetNodes = collectTargetNodes(shapesStore, dataStore, shape);
+    if (targetNodes.length > 0) {
+      results.push({ shape: shape, targetNodes: targetNodes });
+    }
+  }
+
+  return results;
+}
+
+function collectTargetNodes(shapesStore, dataStore, shape) {
+  var targets = new Map();
+
+  // sh:targetClass
+  var tcQuads = shapesStore.getQuads(shape, N3.DataFactory.namedNode(sh('targetClass')), null);
+  for (var i = 0; i < tcQuads.length; i++) {
+    var cls = tcQuads[i].object;
+    var instQuads = dataStore.getQuads(null, N3.DataFactory.namedNode(rdf('type')), cls);
+    for (var j = 0; j < instQuads.length; j++) {
+      targets.set(termKey(instQuads[j].subject), instQuads[j].subject);
+    }
+  }
+
+  // sh:targetNode
+  var tnQuads = shapesStore.getQuads(shape, N3.DataFactory.namedNode(sh('targetNode')), null);
+  for (var i = 0; i < tnQuads.length; i++) {
+    targets.set(termKey(tnQuads[i].object), tnQuads[i].object);
+  }
+
+  // sh:targetSubjectsOf
+  var tsoQuads = shapesStore.getQuads(shape, N3.DataFactory.namedNode(sh('targetSubjectsOf')), null);
+  for (var i = 0; i < tsoQuads.length; i++) {
+    var prop = tsoQuads[i].object;
+    var dQuads = dataStore.getQuads(null, prop, null);
+    for (var j = 0; j < dQuads.length; j++) {
+      targets.set(termKey(dQuads[j].subject), dQuads[j].subject);
+    }
+  }
+
+  // sh:targetObjectsOf
+  var tooQuads = shapesStore.getQuads(shape, N3.DataFactory.namedNode(sh('targetObjectsOf')), null);
+  for (var i = 0; i < tooQuads.length; i++) {
+    var prop = tooQuads[i].object;
+    var dQuads = dataStore.getQuads(null, prop, null);
+    for (var j = 0; j < dQuads.length; j++) {
+      targets.set(termKey(dQuads[j].object), dQuads[j].object);
+    }
+  }
+
+  // Implicit class target
+  var types = shapesStore.getQuads(shape, N3.DataFactory.namedNode(rdf('type')), null).map(function(q) { return q.object.value; });
+  if (types.includes(rdfs('Class'))) {
+    var instQuads = dataStore.getQuads(null, N3.DataFactory.namedNode(rdf('type')), shape);
+    for (var i = 0; i < instQuads.length; i++) {
+      targets.set(termKey(instQuads[i].subject), instQuads[i].subject);
+    }
+  }
+
+  return Array.from(targets.values());
+}
+
+// ═══════════════════════════════════════════════
+//  VALIDATE NODE AGAINST SHAPE
+// ═══════════════════════════════════════════════
+function validateNodeAgainstShape(shapesStore, dataStore, focusNode, shape, prefixMap, silent) {
+  var violations = [];
+
+  // Check deactivated
+  if (getBoolValue(shapesStore, shape, sh('deactivated')) === true) return violations;
+
+  // Get custom severity (default: sh:Violation)
+  var severityNode = getNodeValue(shapesStore, shape, sh('severity'));
+  var severity = severityNode ? severityNode.value : sh('Violation');
+
+  // Get custom message
+  var messageNode = getLiteralValue(shapesStore, shape, sh('message'));
+  var customMessage = messageNode ? messageNode.value : null;
+
+  // Determine if this is a property shape (has sh:path)
+  var pathNode = getNodeValue(shapesStore, shape, sh('path'));
+
+  if (pathNode) {
+    // Property shape: evaluate constraints on value nodes
+    var pathLabel = pathToString(shapesStore, pathNode, prefixMap);
+    var valueNodes = evaluatePath(dataStore, shapesStore, focusNode, pathNode);
+
+    validatePropertyConstraints(shapesStore, dataStore, focusNode, shape, pathNode, valueNodes, pathLabel, prefixMap, violations, severity, customMessage, silent);
+  } else {
+    // Node shape: evaluate constraints on the focus node itself
+    validateNodeConstraints(shapesStore, dataStore, focusNode, shape, prefixMap, violations, severity, customMessage, silent);
+  }
+
+  return violations;
+}
+
+// ── Property shape constraints ────────────────
+function validatePropertyConstraints(shapesStore, dataStore, focusNode, shape, pathNode, valueNodes, pathLabel, prefixMap, violations, severity, customMessage, silent) {
+
+  function addV(msg, constraintName, value) {
+    if (silent) return;
+    violations.push({
+      focusNode: focusNode,
+      resultPath: pathNode,
+      sourceShape: shape,
+      value: value || null,
+      message: customMessage || msg,
+      severity: severity,
+      sourceConstraintComponent: ccIRI(constraintName)
+    });
+  }
+
+  // ── Cardinality ─────────────────────────
+  var minCount = getIntValue(shapesStore, shape, sh('minCount'));
+  if (minCount !== undefined && valueNodes.length < minCount) {
+    addV('Expected at least ' + minCount + ' value(s), found ' + valueNodes.length, 'minCount');
+  }
+
+  var maxCount = getIntValue(shapesStore, shape, sh('maxCount'));
+  if (maxCount !== undefined && valueNodes.length > maxCount) {
+    addV('Expected at most ' + maxCount + ' value(s), found ' + valueNodes.length, 'maxCount');
+  }
+
+  // Per-value constraints
+  for (var i = 0; i < valueNodes.length; i++) {
+    validateValueNode(shapesStore, dataStore, focusNode, shape, pathNode, valueNodes[i], pathLabel, prefixMap, violations, severity, customMessage, silent);
+  }
+
+  // ── uniqueLang ──────────────────────────
+  if (getBoolValue(shapesStore, shape, sh('uniqueLang')) === true) {
+    var langCounts = {};
+    for (var i = 0; i < valueNodes.length; i++) {
+      if (valueNodes[i].termType === 'Literal' && valueNodes[i].language) {
+        langCounts[valueNodes[i].language] = (langCounts[valueNodes[i].language] || 0) + 1;
+      }
+    }
+    for (var lang in langCounts) {
+      if (langCounts[lang] > 1) {
+        addV('Language "' + lang + '" appears ' + langCounts[lang] + ' times, but sh:uniqueLang requires at most 1', 'uniqueLang');
+      }
+    }
+  }
+
+  // ── hasValue (set-level: at least one value must match) ──
+  var hasValueNodes = getNodeValues(shapesStore, shape, sh('hasValue'));
+  for (var i = 0; i < hasValueNodes.length; i++) {
+    var found = valueNodes.some(function(vn) { return termsEqual(vn, hasValueNodes[i]); });
+    if (!found) {
+      addV('Expected to have value ' + shorten(hasValueNodes[i], prefixMap), 'hasValue');
+    }
+  }
+
+  // ── Property pair constraints ───────────
+  validatePropertyPairs(shapesStore, dataStore, focusNode, shape, pathNode, valueNodes, pathLabel, prefixMap, violations, severity, customMessage, silent);
+
+  // ── Logical constraints on property shape ──
+  validateLogicalConstraints(shapesStore, dataStore, focusNode, shape, prefixMap, violations, severity, customMessage, silent, pathLabel, valueNodes, pathNode);
+
+  // ── Qualified value shape ───────────────
+  validateQualifiedValueShape(shapesStore, dataStore, focusNode, shape, valueNodes, pathLabel, prefixMap, violations, severity, customMessage, silent, pathNode);
+
+  // ── sh:node on property shape ───────────
+  var nodeShapes = getNodeValues(shapesStore, shape, sh('node'));
+  for (var i = 0; i < nodeShapes.length; i++) {
+    for (var j = 0; j < valueNodes.length; j++) {
+      var subViolations = validateNodeAgainstShape(shapesStore, dataStore, valueNodes[j], nodeShapes[i], prefixMap, true);
+      if (subViolations.length > 0 && !silent) {
+        var nsLabel = shorten(nodeShapes[i], prefixMap);
+        violations.push({
+          focusNode: focusNode,
+          resultPath: pathNode,
+          sourceShape: shape,
+          value: valueNodes[j],
+          message: customMessage || ('Value ' + shorten(valueNodes[j], prefixMap) + ' does not conform to shape ' + nsLabel),
+          severity: severity,
+          sourceConstraintComponent: ccIRI('node')
+        });
+      }
+    }
+  }
+
+  // ── sh:property on property shape (nested) ──
+  var nestedProps = getNodeValues(shapesStore, shape, sh('property'));
+  for (var i = 0; i < nestedProps.length; i++) {
+    for (var j = 0; j < valueNodes.length; j++) {
+      var subViolations = validateNodeAgainstShape(shapesStore, dataStore, valueNodes[j], nestedProps[i], prefixMap, silent);
+      for (var k = 0; k < subViolations.length; k++) {
+        violations.push(subViolations[k]);
+      }
+    }
+  }
+}
+
+// ── Per-value-node constraints ────────────────
+function validateValueNode(shapesStore, dataStore, focusNode, shape, pathNode, valueNode, pathLabel, prefixMap, violations, severity, customMessage, silent) {
+
+  function addV(msg, constraintName) {
+    if (silent) return;
+    violations.push({
+      focusNode: focusNode,
+      resultPath: pathNode,
+      sourceShape: shape,
+      value: valueNode,
+      message: customMessage || msg,
+      severity: severity,
+      sourceConstraintComponent: ccIRI(constraintName)
+    });
+  }
+
+  var vnLabel = shorten(valueNode, prefixMap);
+
+  // ── sh:class ────────────────────────────
+  var classConstraints = getNodeValues(shapesStore, shape, sh('class'));
+  for (var i = 0; i < classConstraints.length; i++) {
+    var hasType = dataStore.getQuads(valueNode, N3.DataFactory.namedNode(rdf('type')), classConstraints[i]).length > 0;
+    if (!hasType) {
+      addV('Value ' + vnLabel + ' is not an instance of ' + shorten(classConstraints[i], prefixMap), 'class');
+    }
+  }
+
+  // ── sh:datatype ─────────────────────────
+  var dtNode = getNodeValue(shapesStore, shape, sh('datatype'));
+  if (dtNode) {
+    if (valueNode.termType !== 'Literal') {
+      addV('Value ' + vnLabel + ' is not a literal (expected datatype ' + shorten(dtNode, prefixMap) + ')', 'datatype');
+    } else if (!valueNode.datatype || valueNode.datatype.value !== dtNode.value) {
+      var actualDt = valueNode.datatype ? shorten(valueNode.datatype, prefixMap) : 'xsd:string';
+      addV('Value ' + vnLabel + ' has datatype ' + actualDt + ', expected ' + shorten(dtNode, prefixMap), 'datatype');
+    }
+  }
+
+  // ── sh:nodeKind ─────────────────────────
+  var nkNode = getNodeValue(shapesStore, shape, sh('nodeKind'));
+  if (nkNode) {
+    var nk = nkNode.value;
+    var isIRI = valueNode.termType === 'NamedNode';
+    var isBlank = valueNode.termType === 'BlankNode';
+    var isLiteral = valueNode.termType === 'Literal';
+    var ok = false;
+    if (nk === sh('IRI')) ok = isIRI;
+    else if (nk === sh('BlankNode')) ok = isBlank;
+    else if (nk === sh('Literal')) ok = isLiteral;
+    else if (nk === sh('BlankNodeOrIRI')) ok = isBlank || isIRI;
+    else if (nk === sh('BlankNodeOrLiteral')) ok = isBlank || isLiteral;
+    else if (nk === sh('IRIOrLiteral')) ok = isIRI || isLiteral;
+    if (!ok) {
+      addV('Value ' + vnLabel + ' does not match node kind ' + shorten(nkNode, prefixMap), 'nodeKind');
+    }
+  }
+
+  // ── Value range constraints ─────────────
+  var minExcl = getLiteralValue(shapesStore, shape, sh('minExclusive'));
+  if (minExcl) {
+    var cmp = compareLiterals(valueNode, minExcl);
+    if (isNaN(cmp) || cmp <= 0) {
+      addV('Value ' + vnLabel + ' is not > ' + shorten(minExcl, prefixMap), 'minExclusive');
+    }
+  }
+
+  var maxExcl = getLiteralValue(shapesStore, shape, sh('maxExclusive'));
+  if (maxExcl) {
+    var cmp = compareLiterals(valueNode, maxExcl);
+    if (isNaN(cmp) || cmp >= 0) {
+      addV('Value ' + vnLabel + ' is not < ' + shorten(maxExcl, prefixMap), 'maxExclusive');
+    }
+  }
+
+  var minIncl = getLiteralValue(shapesStore, shape, sh('minInclusive'));
+  if (minIncl) {
+    var cmp = compareLiterals(valueNode, minIncl);
+    if (isNaN(cmp) || cmp < 0) {
+      addV('Value ' + vnLabel + ' is not >= ' + shorten(minIncl, prefixMap), 'minInclusive');
+    }
+  }
+
+  var maxIncl = getLiteralValue(shapesStore, shape, sh('maxInclusive'));
+  if (maxIncl) {
+    var cmp = compareLiterals(valueNode, maxIncl);
+    if (isNaN(cmp) || cmp > 0) {
+      addV('Value ' + vnLabel + ' is not <= ' + shorten(maxIncl, prefixMap), 'maxInclusive');
+    }
+  }
+
+  // ── String constraints ──────────────────
+  var str = getLiteralString(valueNode);
+
+  var minLen = getIntValue(shapesStore, shape, sh('minLength'));
+  if (minLen !== undefined && str.length < minLen) {
+    addV('Value ' + vnLabel + ' has length ' + str.length + ', expected at least ' + minLen, 'minLength');
+  }
+
+  var maxLen = getIntValue(shapesStore, shape, sh('maxLength'));
+  if (maxLen !== undefined && str.length > maxLen) {
+    addV('Value ' + vnLabel + ' has length ' + str.length + ', expected at most ' + maxLen, 'maxLength');
+  }
+
+  var patternNode = getLiteralValue(shapesStore, shape, sh('pattern'));
+  if (patternNode) {
+    var flagsNode = getLiteralValue(shapesStore, shape, sh('flags'));
+    var flags = flagsNode ? flagsNode.value : '';
+    try {
+      var re = new RegExp(patternNode.value, flags);
+      if (!re.test(str)) {
+        addV('Value ' + vnLabel + ' does not match pattern "' + patternNode.value + '"', 'pattern');
+      }
+    } catch (e) {
+      addV('Invalid regex pattern "' + patternNode.value + '": ' + e.message, 'pattern');
+    }
+  }
+
+  // ── sh:languageIn ───────────────────────
+  var langInNode = getNodeValue(shapesStore, shape, sh('languageIn'));
+  if (langInNode) {
+    var allowedLangs = parseRdfList(shapesStore, langInNode).map(function(l) { return l.value.toLowerCase(); });
+    if (valueNode.termType === 'Literal') {
+      var lang = (valueNode.language || '').toLowerCase();
+      if (!allowedLangs.some(function(al) { return lang === al || lang.startsWith(al + '-'); })) {
+        addV('Value ' + vnLabel + ' has language "' + (valueNode.language || '(none)') + '", expected one of: ' + allowedLangs.join(', '), 'languageIn');
+      }
+    }
+  }
+
+  // ── sh:in (per value node) ──────────────
+  var inNode = getNodeValue(shapesStore, shape, sh('in'));
+  if (inNode) {
+    var allowedValues = parseRdfList(shapesStore, inNode);
+    var found = allowedValues.some(function(av) { return termsEqual(av, valueNode); });
+    if (!found) {
+      addV('Value ' + vnLabel + ' is not in the allowed values list', 'in');
+    }
+  }
+}
+
+// ── Property pair constraints ─────────────────
+function validatePropertyPairs(shapesStore, dataStore, focusNode, shape, pathNode, valueNodes, pathLabel, prefixMap, violations, severity, customMessage, silent) {
+
+  function addV(msg, constraintName, value) {
+    if (silent) return;
+    violations.push({
+      focusNode: focusNode,
+      resultPath: pathNode,
+      sourceShape: shape,
+      value: value || null,
+      message: customMessage || msg,
+      severity: severity,
+      sourceConstraintComponent: ccIRI(constraintName)
+    });
+  }
+
+  // sh:equals
+  var equalsProps = getNodeValues(shapesStore, shape, sh('equals'));
+  for (var ei = 0; ei < equalsProps.length; ei++) {
+    var eqProp = equalsProps[ei];
+    var otherValues = evaluatePath(dataStore, shapesStore, focusNode, eqProp);
+    var vnKeys = new Set(valueNodes.map(termKey));
+    var ovKeys = new Set(otherValues.map(termKey));
+
+    for (var i = 0; i < valueNodes.length; i++) {
+      if (!ovKeys.has(termKey(valueNodes[i]))) {
+        addV('Value ' + shorten(valueNodes[i], prefixMap) + ' exists in ' + pathLabel + ' but not in ' + shorten(eqProp, prefixMap), 'equals', valueNodes[i]);
+      }
+    }
+    for (var i = 0; i < otherValues.length; i++) {
+      if (!vnKeys.has(termKey(otherValues[i]))) {
+        addV('Value ' + shorten(otherValues[i], prefixMap) + ' exists in ' + shorten(eqProp, prefixMap) + ' but not in ' + pathLabel, 'equals', otherValues[i]);
+      }
+    }
+  }
+
+  // sh:disjoint
+  var disjointProps = getNodeValues(shapesStore, shape, sh('disjoint'));
+  for (var di = 0; di < disjointProps.length; di++) {
+    var djProp = disjointProps[di];
+    var otherValues = evaluatePath(dataStore, shapesStore, focusNode, djProp);
+    var ovKeys = new Set(otherValues.map(termKey));
+    for (var i = 0; i < valueNodes.length; i++) {
+      if (ovKeys.has(termKey(valueNodes[i]))) {
+        addV('Value ' + shorten(valueNodes[i], prefixMap) + ' appears in both ' + pathLabel + ' and ' + shorten(djProp, prefixMap) + ' (must be disjoint)', 'disjoint', valueNodes[i]);
+      }
+    }
+  }
+
+  // sh:lessThan
+  var ltProps = getNodeValues(shapesStore, shape, sh('lessThan'));
+  for (var li = 0; li < ltProps.length; li++) {
+    var ltProp = ltProps[li];
+    var otherValues = evaluatePath(dataStore, shapesStore, focusNode, ltProp);
+    for (var i = 0; i < valueNodes.length; i++) {
+      for (var j = 0; j < otherValues.length; j++) {
+        var cmp = compareLiterals(valueNodes[i], otherValues[j]);
+        if (isNaN(cmp) || cmp >= 0) {
+          addV('Value ' + shorten(valueNodes[i], prefixMap) + ' is not less than ' + shorten(otherValues[j], prefixMap) + ' (' + shorten(ltProp, prefixMap) + ')', 'lessThan', valueNodes[i]);
+        }
+      }
+    }
+  }
+
+  // sh:lessThanOrEquals
+  var lteProps = getNodeValues(shapesStore, shape, sh('lessThanOrEquals'));
+  for (var li = 0; li < lteProps.length; li++) {
+    var lteProp = lteProps[li];
+    var otherValues = evaluatePath(dataStore, shapesStore, focusNode, lteProp);
+    for (var i = 0; i < valueNodes.length; i++) {
+      for (var j = 0; j < otherValues.length; j++) {
+        var cmp = compareLiterals(valueNodes[i], otherValues[j]);
+        if (isNaN(cmp) || cmp > 0) {
+          addV('Value ' + shorten(valueNodes[i], prefixMap) + ' is not <= ' + shorten(otherValues[j], prefixMap) + ' (' + shorten(lteProp, prefixMap) + ')', 'lessThanOrEquals', valueNodes[i]);
+        }
+      }
+    }
+  }
+}
+
+// ── Logical constraints ───────────────────────
+function validateLogicalConstraints(shapesStore, dataStore, focusNode, shape, prefixMap, violations, severity, customMessage, silent, pathLabel, valueNodes, pathNode) {
+
+  function addV(msg, constraintName) {
+    if (silent) return;
+    var entry = {
+      focusNode: focusNode,
+      resultPath: pathNode || null,
+      sourceShape: shape,
+      value: null,
+      message: customMessage || msg,
+      severity: severity,
+      sourceConstraintComponent: ccIRI(constraintName)
+    };
+    violations.push(entry);
+  }
+
+  // sh:not
+  var notShapes = getNodeValues(shapesStore, shape, sh('not'));
+  for (var i = 0; i < notShapes.length; i++) {
+    var testViolations = validateNodeAgainstShape(shapesStore, dataStore, focusNode, notShapes[i], prefixMap, true);
+    if (testViolations.length === 0) {
+      addV('Node conforms to ' + shorten(notShapes[i], prefixMap) + ' but sh:not requires it must not', 'not');
+    }
+  }
+
+  // sh:and
+  var andLists = getNodeValues(shapesStore, shape, sh('and'));
+  for (var i = 0; i < andLists.length; i++) {
+    var andShapes = parseRdfList(shapesStore, andLists[i]);
+    for (var j = 0; j < andShapes.length; j++) {
+      var testV = validateNodeAgainstShape(shapesStore, dataStore, focusNode, andShapes[j], prefixMap, true);
+      if (testV.length > 0 && !silent) {
+        addV('Does not conform to all shapes in sh:and (failed: ' + shorten(andShapes[j], prefixMap) + ')', 'and');
+      }
+    }
+  }
+
+  // sh:or
+  var orLists = getNodeValues(shapesStore, shape, sh('or'));
+  for (var i = 0; i < orLists.length; i++) {
+    var orShapes = parseRdfList(shapesStore, orLists[i]);
+    var anyConforms = orShapes.some(function(s) {
+      var testV = validateNodeAgainstShape(shapesStore, dataStore, focusNode, s, prefixMap, true);
+      return testV.length === 0;
+    });
+    if (!anyConforms) {
+      var labels = orShapes.map(function(s) { return shorten(s, prefixMap); }).join(', ');
+      addV('Does not conform to any shape in sh:or (' + labels + ')', 'or');
+    }
+  }
+
+  // sh:xone
+  var xoneLists = getNodeValues(shapesStore, shape, sh('xone'));
+  for (var i = 0; i < xoneLists.length; i++) {
+    var xoneShapes = parseRdfList(shapesStore, xoneLists[i]);
+    var conformCount = 0;
+    for (var j = 0; j < xoneShapes.length; j++) {
+      var testV = validateNodeAgainstShape(shapesStore, dataStore, focusNode, xoneShapes[j], prefixMap, true);
+      if (testV.length === 0) conformCount++;
+    }
+    if (conformCount !== 1) {
+      addV('Conforms to ' + conformCount + ' shapes in sh:xone, expected exactly 1', 'xone');
+    }
+  }
+}
+
+// ── Node shape constraints (no sh:path) ───────
+function validateNodeConstraints(shapesStore, dataStore, focusNode, shape, prefixMap, violations, severity, customMessage, silent) {
+
+  function addV(msg, constraintName, value) {
+    if (silent) return;
+    violations.push({
+      focusNode: focusNode,
+      resultPath: null,
+      sourceShape: shape,
+      value: value || null,
+      message: customMessage || msg,
+      severity: severity,
+      sourceConstraintComponent: ccIRI(constraintName)
+    });
+  }
+
+  var fnLabel = shorten(focusNode, prefixMap);
+
+  // ── sh:class on node shape ──────────────
+  var classConstraints = getNodeValues(shapesStore, shape, sh('class'));
+  for (var i = 0; i < classConstraints.length; i++) {
+    var hasType = dataStore.getQuads(focusNode, N3.DataFactory.namedNode(rdf('type')), classConstraints[i]).length > 0;
+    if (!hasType) {
+      addV(fnLabel + ' is not an instance of ' + shorten(classConstraints[i], prefixMap), 'class');
+    }
+  }
+
+  // ── sh:datatype on node shape ───────────
+  var dtNode = getNodeValue(shapesStore, shape, sh('datatype'));
+  if (dtNode) {
+    if (focusNode.termType !== 'Literal') {
+      addV(fnLabel + ' is not a literal (expected datatype ' + shorten(dtNode, prefixMap) + ')', 'datatype');
+    } else if (!focusNode.datatype || focusNode.datatype.value !== dtNode.value) {
+      addV(fnLabel + ' has wrong datatype, expected ' + shorten(dtNode, prefixMap), 'datatype');
+    }
+  }
+
+  // ── sh:nodeKind on node shape ───────────
+  var nkNode = getNodeValue(shapesStore, shape, sh('nodeKind'));
+  if (nkNode) {
+    var nk = nkNode.value;
+    var isIRI = focusNode.termType === 'NamedNode';
+    var isBlank = focusNode.termType === 'BlankNode';
+    var isLiteral = focusNode.termType === 'Literal';
+    var ok = false;
+    if (nk === sh('IRI')) ok = isIRI;
+    else if (nk === sh('BlankNode')) ok = isBlank;
+    else if (nk === sh('Literal')) ok = isLiteral;
+    else if (nk === sh('BlankNodeOrIRI')) ok = isBlank || isIRI;
+    else if (nk === sh('BlankNodeOrLiteral')) ok = isBlank || isLiteral;
+    else if (nk === sh('IRIOrLiteral')) ok = isIRI || isLiteral;
+    if (!ok) {
+      addV(fnLabel + ' does not match node kind ' + shorten(nkNode, prefixMap), 'nodeKind');
+    }
+  }
+
+  // ── sh:hasValue on node shape ───────────
+  var hasValueNodes = getNodeValues(shapesStore, shape, sh('hasValue'));
+  for (var i = 0; i < hasValueNodes.length; i++) {
+    if (!termsEqual(focusNode, hasValueNodes[i])) {
+      addV(fnLabel + ' does not equal required value ' + shorten(hasValueNodes[i], prefixMap), 'hasValue');
+    }
+  }
+
+  // ── sh:in on node shape ─────────────────
+  var inNode = getNodeValue(shapesStore, shape, sh('in'));
+  if (inNode) {
+    var allowedValues = parseRdfList(shapesStore, inNode);
+    if (!allowedValues.some(function(av) { return termsEqual(av, focusNode); })) {
+      addV(fnLabel + ' is not in the allowed values list', 'in');
+    }
+  }
+
+  // ── Value range on node shape ───────────
+  var minExcl = getLiteralValue(shapesStore, shape, sh('minExclusive'));
+  if (minExcl) {
+    var cmp = compareLiterals(focusNode, minExcl);
+    if (isNaN(cmp) || cmp <= 0) addV(fnLabel + ' is not > ' + shorten(minExcl, prefixMap), 'minExclusive');
+  }
+  var maxExcl = getLiteralValue(shapesStore, shape, sh('maxExclusive'));
+  if (maxExcl) {
+    var cmp = compareLiterals(focusNode, maxExcl);
+    if (isNaN(cmp) || cmp >= 0) addV(fnLabel + ' is not < ' + shorten(maxExcl, prefixMap), 'maxExclusive');
+  }
+  var minIncl = getLiteralValue(shapesStore, shape, sh('minInclusive'));
+  if (minIncl) {
+    var cmp = compareLiterals(focusNode, minIncl);
+    if (isNaN(cmp) || cmp < 0) addV(fnLabel + ' is not >= ' + shorten(minIncl, prefixMap), 'minInclusive');
+  }
+  var maxIncl = getLiteralValue(shapesStore, shape, sh('maxInclusive'));
+  if (maxIncl) {
+    var cmp = compareLiterals(focusNode, maxIncl);
+    if (isNaN(cmp) || cmp > 0) addV(fnLabel + ' is not <= ' + shorten(maxIncl, prefixMap), 'maxInclusive');
+  }
+
+  // ── String constraints on node shape ────
+  var str = getLiteralString(focusNode);
+  var minLen = getIntValue(shapesStore, shape, sh('minLength'));
+  if (minLen !== undefined && str.length < minLen) {
+    addV(fnLabel + ' has length ' + str.length + ', expected at least ' + minLen, 'minLength');
+  }
+  var maxLen = getIntValue(shapesStore, shape, sh('maxLength'));
+  if (maxLen !== undefined && str.length > maxLen) {
+    addV(fnLabel + ' has length ' + str.length + ', expected at most ' + maxLen, 'maxLength');
+  }
+  var patternNode = getLiteralValue(shapesStore, shape, sh('pattern'));
+  if (patternNode) {
+    var flagsNode = getLiteralValue(shapesStore, shape, sh('flags'));
+    var flags = flagsNode ? flagsNode.value : '';
+    try {
+      var re = new RegExp(patternNode.value, flags);
+      if (!re.test(str)) addV(fnLabel + ' does not match pattern "' + patternNode.value + '"', 'pattern');
+    } catch (e) {
+      addV('Invalid regex pattern: ' + e.message, 'pattern');
+    }
+  }
+
+  // ── sh:property (recurse into property shapes) ──
+  var propShapes = getNodeValues(shapesStore, shape, sh('property'));
+  for (var i = 0; i < propShapes.length; i++) {
+    var subViolations = validateNodeAgainstShape(shapesStore, dataStore, focusNode, propShapes[i], prefixMap, silent);
+    for (var j = 0; j < subViolations.length; j++) {
+      violations.push(subViolations[j]);
+    }
+  }
+
+  // ── sh:node (recurse into node shapes) ──
+  var nodeShapes = getNodeValues(shapesStore, shape, sh('node'));
+  for (var i = 0; i < nodeShapes.length; i++) {
+    var subViolations = validateNodeAgainstShape(shapesStore, dataStore, focusNode, nodeShapes[i], prefixMap, true);
+    if (subViolations.length > 0 && !silent) {
+      addV(fnLabel + ' does not conform to shape ' + shorten(nodeShapes[i], prefixMap), 'node');
+    }
+  }
+
+  // ── Logical constraints ─────────────────
+  validateLogicalConstraints(shapesStore, dataStore, focusNode, shape, prefixMap, violations, severity, customMessage, silent, null, null, null);
+
+  // ── sh:closed ───────────────────────────
+  if (getBoolValue(shapesStore, shape, sh('closed')) === true) {
+    var allowedProps = new Set();
+    allowedProps.add(rdf('type'));
+
+    var ignoredNode = getNodeValue(shapesStore, shape, sh('ignoredProperties'));
+    if (ignoredNode) {
+      var ignored = parseRdfList(shapesStore, ignoredNode);
+      for (var i = 0; i < ignored.length; i++) allowedProps.add(ignored[i].value);
+    }
+
+    for (var i = 0; i < propShapes.length; i++) {
+      var psPath = getNodeValue(shapesStore, propShapes[i], sh('path'));
+      if (psPath && psPath.termType === 'NamedNode') {
+        allowedProps.add(psPath.value);
+      }
+    }
+
+    var allPredicates = new Set();
+    var focusQuads = dataStore.getQuads(focusNode, null, null);
+    for (var i = 0; i < focusQuads.length; i++) {
+      allPredicates.add(focusQuads[i].predicate.value);
+    }
+
+    for (var pred of allPredicates) {
+      if (!allowedProps.has(pred)) {
+        var predTerm = N3.DataFactory.namedNode(pred);
+        addV('Property ' + shorten(predTerm, prefixMap) + ' is not allowed (sh:closed)', 'closed');
+      }
+    }
+  }
+}
+
+// ── Qualified value shape ─────────────────────
+function validateQualifiedValueShape(shapesStore, dataStore, focusNode, shape, valueNodes, pathLabel, prefixMap, violations, severity, customMessage, silent, pathNode) {
+  var qvsNode = getNodeValue(shapesStore, shape, sh('qualifiedValueShape'));
+  if (!qvsNode) return;
+
+  var qMinCount = getIntValue(shapesStore, shape, sh('qualifiedMinCount'));
+  var qMaxCount = getIntValue(shapesStore, shape, sh('qualifiedMaxCount'));
+
+  var conforming = 0;
+  for (var i = 0; i < valueNodes.length; i++) {
+    var testV = validateNodeAgainstShape(shapesStore, dataStore, valueNodes[i], qvsNode, prefixMap, true);
+    if (testV.length === 0) conforming++;
+  }
+
+  function addV(msg, constraintName) {
+    if (silent) return;
+    violations.push({
+      focusNode: focusNode,
+      resultPath: pathNode || null,
+      sourceShape: shape,
+      value: null,
+      message: customMessage || msg,
+      severity: severity,
+      sourceConstraintComponent: ccIRI(constraintName)
+    });
+  }
+
+  if (qMinCount !== undefined && conforming < qMinCount) {
+    addV('Expected at least ' + qMinCount + ' value(s) conforming to qualified shape, found ' + conforming, 'qualifiedMinCount');
+  }
+  if (qMaxCount !== undefined && conforming > qMaxCount) {
+    addV('Expected at most ' + qMaxCount + ' value(s) conforming to qualified shape, found ' + conforming, 'qualifiedMaxCount');
+  }
+}
+
+// ── Quiz logic ──────────────────────────────
+(function() {
+  // Attach click handlers to quiz options
+  document.querySelectorAll('.quiz-opt').forEach(function(opt) {
+    opt.addEventListener('click', function() {
+      var radio = opt.querySelector('input[type="radio"]');
+      if (!radio || radio.disabled) return;
+      radio.checked = true;
+      // Visual selection
+      opt.closest('.quiz-options').querySelectorAll('.quiz-opt').forEach(function(o) { o.classList.remove('selected'); });
+      opt.classList.add('selected');
+    });
+  });
+})();
+
+function submitQuiz() {
+  var questions = document.querySelectorAll('.quiz-question');
+  var total = questions.length;
+  var correct = 0;
+
+  questions.forEach(function(q, i) {
+    var correctAnswer = q.dataset.correct;
+    var selected = q.querySelector('input[type="radio"]:checked');
+    var chosenVal = selected ? selected.value : null;
+
+    // Disable all radios
+    q.querySelectorAll('input[type="radio"]').forEach(function(r) { r.disabled = true; });
+
+    // Reveal correct/incorrect
+    q.querySelectorAll('.quiz-opt').forEach(function(opt) {
+      var val = opt.dataset.val;
+      if (val === correctAnswer) {
+        opt.classList.add('reveal-correct');
+      }
+      if (opt.classList.contains('selected') && val !== correctAnswer) {
+        opt.classList.add('reveal-wrong');
+      }
+    });
+
+    if (chosenVal === correctAnswer) {
+      correct++;
+      q.classList.add('correct');
+    } else {
+      q.classList.add('incorrect');
+    }
+
+    // Show explanation
+    var expl = q.querySelector('.quiz-explanation');
+    if (expl) expl.classList.add('show');
+  });
+
+  // Update score display
+  document.getElementById('quiz-score').textContent = correct;
+  var pct = Math.round((correct / total) * 100);
+  document.getElementById('quiz-bar').style.width = pct + '%';
+  document.getElementById('quiz-bar').style.background = pct >= 80 ? '#16a34a' : (pct >= 50 ? '#d97706' : '#dc2626');
+
+  // Hide submit, show result
+  document.getElementById('quiz-submit-btn').style.display = 'none';
+
+  if (pct >= 80) {
+    var badge = document.getElementById('quiz-badge');
+    badge.classList.add('show');
+    document.getElementById('quiz-badge-score').textContent = 'You scored ' + correct + '/' + total + ' (' + pct + '%)';
+  } else {
+    var retry = document.getElementById('quiz-retry');
+    retry.classList.add('show');
+    document.getElementById('quiz-retry-score').textContent = correct + '/' + total + ' (' + pct + '%)';
+  }
+}
+
+function resetQuiz() {
+  var questions = document.querySelectorAll('.quiz-question');
+  questions.forEach(function(q) {
+    q.classList.remove('correct', 'incorrect');
+    q.querySelectorAll('input[type="radio"]').forEach(function(r) { r.disabled = false; r.checked = false; });
+    q.querySelectorAll('.quiz-opt').forEach(function(o) { o.classList.remove('selected', 'reveal-correct', 'reveal-wrong'); });
+    var expl = q.querySelector('.quiz-explanation');
+    if (expl) expl.classList.remove('show');
+  });
+  document.getElementById('quiz-score').textContent = '0';
+  document.getElementById('quiz-bar').style.width = '0%';
+  document.getElementById('quiz-bar').style.background = '#c8a000';
+  document.getElementById('quiz-submit-btn').style.display = '';
+  document.getElementById('quiz-badge').classList.remove('show');
+  document.getElementById('quiz-retry').classList.remove('show');
+}
+</script>
+</body>
+</html>
