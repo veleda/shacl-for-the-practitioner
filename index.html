@@ -240,6 +240,7 @@
       display: grid;
       grid-template-columns: 1fr 1fr;
       gap: 1.5rem;
+      align-items: start;
     }
     .right-stack {
       grid-column: 2;
@@ -779,10 +780,11 @@
       <!-- ROW 2: CDL + Dean side by side -->
       <div class="photo-pair">
         <div class="photo-card">
-          <img src="img/community/connected-data-london.jpg" alt="Book stand at Connected Data London 2025" />
+          <img src="img/community/connected-data-london.jpg" alt="Book stand at Connected Data London 2025" style="aspect-ratio:16/9" />
           <div class="photo-caption">Book stand at Connected Data London, December 2025</div>
         </div>
-        <div class="photo-card">
+        <div class="photo-card" style="position:relative;">
+          <a href="https://www.linkedin.com/feed/update/urn:li:activity:7391472864304005120/" target="_blank" class="li-link" style="position:absolute; top:0.75rem; right:0.75rem; background:rgba(255,255,255,0.85); padding:0.35rem; border-radius:50%;"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/></svg></a>
           <img src="img/community/dean-allemang.png" alt="Dean Allemang with SHACL for the Practitioner" style="aspect-ratio:3/4; object-fit:cover; object-position:center" />
           <div class="photo-caption">Dean Allemang — co-author of Semantic Web for the Working Ontologist — with his copy</div>
         </div>
